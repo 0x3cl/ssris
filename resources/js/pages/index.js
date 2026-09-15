@@ -20,46 +20,38 @@ export default defineComponent({
                     <div class="mt-8 grid gap-5 md:grid-cols-2">
                     <a
                         href="/walk-in"
-                        class="group flex min-h-80 flex-col items-center rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-sky-300 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-sky-200 focus-visible:outline-none"
+                        class="group flex min-h-80 flex-col items-center rounded-3xl border border-[#c8e0f4] bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#0d5ba6] hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#bfe5ff] focus-visible:outline-none"
                     >
-                        <img
-                            src="https://unpkg.com/undraw-svg@1.0.0/svgs/walk-in-the-city.svg"
-                            alt="Person walking into the city"
-                            class="h-44 w-full max-w-xs object-contain"
-                        >
-                        <h2 class="mt-6 text-2xl font-semibold text-slate-900">Walk In</h2>
+                        <div class="flex h-44 w-full items-center justify-center p-4"><img src="/assets/undraw/walk-in-the-city.svg" alt="Person walking into the city" class="h-full w-full max-w-xs object-contain" /></div>
+                        <h2 class="mt-6 text-2xl font-semibold text-slate-900 uppercase">Walk In</h2>
                         <p class="mt-2 text-slate-600">Visit us today without scheduling ahead.</p>
-                        <span class="mt-6 font-semibold text-sky-700 group-hover:text-sky-800">Continue <span aria-hidden="true">→</span></span>
+                        <span class="mt-6 font-semibold text-[#07559e] group-hover:text-[#043d78]">Continue <span aria-hidden="true">→</span></span>
                     </a>
 
                     <a
                         href="/book-an-appointment"
-                        class="group flex min-h-80 flex-col items-center rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-violet-200 focus-visible:outline-none"
+                        class="group flex min-h-80 flex-col items-center rounded-3xl border border-[#c8e0f4] bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#0d5ba6] hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#bfe5ff] focus-visible:outline-none"
                     >
-                        <img
-                            src="https://unpkg.com/undraw-svg@1.0.0/svgs/schedule.svg"
-                            alt="Calendar schedule"
-                            class="h-44 w-full max-w-xs object-contain"
-                        >
-                        <h2 class="mt-6 text-2xl font-semibold text-slate-900">Book Appointment</h2>
+                        <div class="flex h-44 w-full items-center justify-center p-4"><img src="/assets/undraw/schedule.svg" alt="Calendar schedule" class="h-full w-full max-w-xs object-contain" /></div>
+                        <h2 class="mt-6 text-2xl font-semibold text-slate-900 uppercase">Book Appointment</h2>
                         <p class="mt-2 text-slate-600">Reserve a date and time that works for you.</p>
-                        <span class="mt-6 font-semibold text-violet-700 group-hover:text-violet-800">Continue <span aria-hidden="true">→</span></span>
+                        <span class="mt-6 font-semibold text-[#07559e] group-hover:text-[#043d78]">Continue <span aria-hidden="true">→</span></span>
                     </a>
 
                     <a
                         href="https://www.lbp-eservices.com/egps/portal/index.jsp"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="group flex min-h-52 items-center gap-6 rounded-3xl border border-emerald-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-emerald-400 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-emerald-200 focus-visible:outline-none md:col-span-2 sm:px-8"
+                        class="group flex min-h-60 items-center gap-6 rounded-3xl border border-[#c8e0f4] bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-[#0d5ba6] hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#bfe5ff] focus-visible:outline-none md:col-span-2 sm:px-8"
                     >
-                        <div class="flex h-28 w-36 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 p-5 sm:h-32 sm:w-44">
+                        <div class="flex h-48 w-46 shrink-0 items-center justify-center rounded-2xl p-5 sm:h-32 sm:w-44">
                             <img
                                 src="/assets/landbank.png"
                                 alt="LANDBANK logo"
                                 class="max-h-full max-w-full object-contain"
                             >
                         </div>
-                        <div><h2 class="text-xl font-semibold text-slate-900 sm:text-2xl">LANDBANK E-Payment Facility</h2><p class="mt-2 text-slate-600">Continue to the official LANDBANK online payment portal.</p><span class="mt-5 block font-semibold text-emerald-700 group-hover:text-emerald-800">Open payment portal <span aria-hidden="true">↗</span></span></div>
+                        <div><h2 class="text-xl font-semibold text-slate-900 sm:text-2xl">LANDBANK E-Payment Facility</h2><p class="mt-2 text-slate-600">Continue to the official LANDBANK online payment portal.</p><span class="mt-5 block font-semibold text-[#07559e] group-hover:text-[#043d78]">Open payment portal <span aria-hidden="true">↗</span></span></div>
                     </a>
                     </div>
                 </div>

@@ -8,6 +8,7 @@
     input[type='radio']:not(:disabled) {
         cursor: pointer;
     }
+
 }
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

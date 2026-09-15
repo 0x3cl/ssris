@@ -13,24 +13,19 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 
-class StoreWalkInRequest extends FormRequest
+class StoreAppointmentRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, array<int, mixed>>
-     */
+    /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
         $rules = [
+            'appointment_date' => ['required', 'date', 'after_or_equal:today'],
+            'appointment_time' => ['required', 'date_format:H:i'],
             'firstname' => ['required', 'string', 'max:255'],
             'middlename' => ['nullable', 'string', 'max:255'],
             'lastname' => ['required', 'string', 'max:255'],
@@ -56,7 +51,7 @@ class StoreWalkInRequest extends FormRequest
             'description' => ['required', 'string'],
         ];
 
-        if (! $this->routeIs('walk-in.validate')) {
+        if (! $this->routeIs('appointment.validate')) {
             $rules['terms_accepted'] = ['accepted'];
         }
 
@@ -65,7 +60,7 @@ class StoreWalkInRequest extends FormRequest
 
     protected function failedValidation(Validator $validator): void
     {
-        if ($this->routeIs('walk-in.store') && $validator->errors()->has('email')) {
+        if ($this->routeIs('appointment.store') && $validator->errors()->has('email')) {
             throw new HttpResponseException(
                 to_route('home')->with('error', 'Please start again with a valid email address.'),
             );

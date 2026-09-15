@@ -41,7 +41,7 @@ export default defineComponent({
                 <section class="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
                     <header class="flex items-start justify-between gap-4 border-b border-slate-200 p-6 sm:px-8">
                         <div><h2 id="terms-title" class="text-2xl font-semibold text-slate-900">Terms and Conditions</h2><p class="mt-1 text-sm text-slate-500">TSD Form No. 001 · Rev. 4/04-10-21</p></div>
-                        <button type="button" class="text-xl text-slate-400 hover:text-slate-700" aria-label="Close" @click="close">×</button>
+                        <button type="button" class="flex h-10 w-10 items-center justify-center rounded-full text-3xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close" @click="close">×</button>
                     </header>
                     <div class="overflow-y-auto px-6 py-6 text-sm leading-6 text-slate-700 sm:px-8" @scroll="checkScrollPosition">
                         <ol class="list-decimal space-y-4 pl-5 marker:font-semibold marker:text-slate-900">

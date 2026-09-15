@@ -157,3 +157,21 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run `vendor/bin/phpunit` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 </laravel-boost-guidelines>
+
+## SRRIS Project Context
+
+### Stack
+
+- PHP 8.4 and Laravel 13
+- Inertia.js 3 with Vue 3 JavaScript page components
+- Tailwind CSS 4 and Vite 8
+- MySQL-compatible Laravel database layer, PHPUnit 12, and Laravel Pint
+
+### Structure and request flows
+
+- Public routes are in `routes/web.php`; Inertia page data and persistence orchestration belong in `app/Http/Controllers`.
+- Server-side request validation belongs in `app/Http/Requests`; shared client writes are handled by `app/Services/ClientService.php`.
+- Vue pages live in `resources/js/pages` and reusable UI components in `resources/js/components`.
+- Walk-in and appointment requests share email-based client lookup and update-or-create behavior. Use enums for service and client option lists.
+- A walk-in creates a `service_requests` record with `is_appointment = false`. An appointment sets `is_appointment = true` and persists `appointment_date` and `appointment_time`.
+- Read `docs/service-request-flows.md` and `.claude/skills/service-request-flows/SKILL.md` before making request-flow changes.
