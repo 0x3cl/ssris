@@ -165,27 +165,10 @@ export default defineComponent({
                     <div class="mt-7 max-w-xl">
                         <h3 class="text-base font-bold text-slate-900">Client feedback</h3>
 
-                        <div v-if="rddRequest.feedback_received_at" class="mt-5 space-y-4">
-                            <div class="rounded-xl bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
-                                Feedback received on {{ rddRequest.feedback_received_at }}.
-                            </div>
-                            <div v-if="rddRequest.feedback_rating">
-                                <dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Rating</dt>
-                                <dd class="mt-1 text-slate-700">{{ rddRequest.feedback_rating }} / 5</dd>
-                            </div>
-                            <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Message</dt>
-                                <dd class="mt-1 whitespace-pre-wrap leading-7 text-slate-700">{{ rddRequest.feedback_message || '—' }}</dd>
-                            </div>
-                        </div>
-
-                        <div v-else class="mt-5 space-y-4">
+                        <div class="mt-5 space-y-4">
                             <div class="rounded-xl bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-700">
-                                No feedback received yet.
+                                Send the client a reminder to fill out the Customer Satisfaction Feedback and claim their request.
                             </div>
-                            <p v-if="rddRequest.reminder_sent_at" class="text-sm text-slate-500">
-                                Last reminder sent on {{ rddRequest.reminder_sent_at }}.
-                            </p>
                             <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc] disabled:cursor-not-allowed disabled:bg-slate-400" :disabled="sending" @click="sendReminder">
                                 <i class="fa-solid fa-envelope" aria-hidden="true"></i>{{ sending ? 'Sending…' : 'Send reminder' }}
                             </button>

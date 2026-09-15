@@ -9,6 +9,11 @@
         cursor: pointer;
     }
 
+    select {
+        background-position: right 0.875rem center;
+        padding-right: 2.75rem !important;
+    }
+
     .required-label::after {
         color: var(--color-rose-600);
         content: ' *';

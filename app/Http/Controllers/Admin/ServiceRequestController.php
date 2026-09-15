@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ServiceRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,6 +48,7 @@ class ServiceRequestController extends Controller
                 'status_value' => $serviceRequest->status->value,
                 'appointment_date' => $serviceRequest->appointment_date?->toDateString(),
                 'appointment_time' => $serviceRequest->appointment_time,
+                'is_appointment_approved' => $serviceRequest->is_appointment_approved,
                 'description' => $serviceRequest->description,
                 'created_at' => $serviceRequest->created_at->format('F, d Y H:i:s'),
                 'client' => $serviceRequest->client,
@@ -65,9 +67,61 @@ class ServiceRequestController extends Controller
     public function proceed(ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->status === ServiceRequestStatus::Pending, 422, 'Only pending requests can proceed.');
+        abort_if($serviceRequest->is_appointment && ! $serviceRequest->is_appointment_approved, 422, 'Confirm the appointment before proceeding.');
 
         $serviceRequest->update(['status' => ServiceRequestStatus::ForPayment]);
 
         return back()->with('success', 'The request has moved to for payment.');
+    }
+
+    public function approveAppointment(Request $request, ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->is_appointment, 422, 'Only appointment requests can be confirmed.');
+        abort_unless($serviceRequest->status === ServiceRequestStatus::Pending, 422, 'Only pending requests can be confirmed.');
+
+        $data = $request->validate([
+            'reschedule' => ['sometimes', 'boolean'],
+            'appointment_date' => ['required_if:reschedule,true', 'date', 'after_or_equal:today'],
+            'appointment_time' => ['required_if:reschedule,true', 'date_format:H:i,H:i:s'],
+        ]);
+
+        $this->validateConfirmationCode($request);
+
+        $update = ['is_appointment_approved' => true];
+
+        if ($request->boolean('reschedule')) {
+            $update['appointment_date'] = $data['appointment_date'];
+            $update['appointment_time'] = $data['appointment_time'];
+        }
+
+        $serviceRequest->update($update);
+
+        return back()->with('success', $request->boolean('reschedule')
+            ? 'Appointment rescheduled and confirmed.'
+            : 'Appointment confirmed.');
+    }
+
+    public function cancelAppointment(Request $request, ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->is_appointment, 422, 'Only appointment requests can be cancelled here.');
+        abort_unless($serviceRequest->status === ServiceRequestStatus::Pending, 422, 'Only pending requests can be cancelled here.');
+
+        $this->validateConfirmationCode($request);
+
+        $serviceRequest->update(['status' => ServiceRequestStatus::Cancelled]);
+
+        return back()->with('success', 'The appointment request has been cancelled.');
+    }
+
+    private function validateConfirmationCode(Request $request): void
+    {
+        $data = $request->validate(['confirmation_code' => ['required', 'digits:4']]);
+        $challenge = $request->session()->get('admin.delete_challenge');
+
+        if (! is_string($challenge) || ! hash_equals($challenge, $data['confirmation_code'])) {
+            throw ValidationException::withMessages(['confirmation_code' => 'Enter the displayed four-digit confirmation code to confirm this action.']);
+        }
+
+        $request->session()->forget('admin.delete_challenge');
     }
 }

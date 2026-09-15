@@ -1,17 +1,24 @@
 import { Head, router } from '@inertiajs/vue3';
-import { defineComponent, onBeforeUnmount, reactive, ref } from 'vue';
+import { computed, defineComponent, onBeforeUnmount, reactive, ref } from 'vue';
 import AdminShell from '../../components/AdminShell';
+import AppointmentConfirmModal from '../../components/AppointmentConfirmModal';
+import CodeConfirmationModal from '../../components/CodeConfirmationModal';
 import ConfirmActionModal from '../../components/ConfirmActionModal';
 import RequestDetailsModal from '../../components/RequestDetailsModal';
+import { formatDateTime } from '../../utils/format-date';
+
+const needsAppointmentConfirmation = (request) => request.type === 'appointment' && !request.is_appointment_approved;
 
 export default defineComponent({
     name: 'AdminRequests',
-    components: { AdminShell, ConfirmActionModal, Head, RequestDetailsModal },
+    components: { AdminShell, AppointmentConfirmModal, CodeConfirmationModal, ConfirmActionModal, Head, RequestDetailsModal },
     props: { filters: { type: Object, required: true }, requests: { type: Object, required: true }, statuses: { type: Array, required: true } },
     setup(props) {
         const filters = reactive({ ...props.filters });
         const selectedRequest = ref(null);
         const proceeding = reactive({ processing: false, request: null });
+        // step: null (closed) | 'details' (choose approve/reschedule/cancel) | 'captcha' (confirmation code)
+        const confirmingAppointment = reactive({ processing: false, request: null, step: null, pendingAction: null });
         let searchTimer;
 
         const load = () => router.get('/admin/requests', filters, { preserveState: true, replace: true, preserveScroll: true });
@@ -26,6 +33,13 @@ export default defineComponent({
             if (url) router.get(url, {}, { preserveScroll: true });
         };
         const proceed = (request) => {
+            if (needsAppointmentConfirmation(request)) {
+                confirmingAppointment.request = request;
+                confirmingAppointment.step = 'details';
+
+                return;
+            }
+
             if (request.service_value === 'rnd-services') {
                 router.get(`/admin/requests/${request.id}/rdd-request`);
 
@@ -48,12 +62,74 @@ export default defineComponent({
                 },
             });
         };
+        const closeAppointmentFlow = () => {
+            confirmingAppointment.request = null;
+            confirmingAppointment.step = null;
+            confirmingAppointment.pendingAction = null;
+        };
+        const continueToCaptcha = (payload) => {
+            confirmingAppointment.pendingAction = payload;
+            confirmingAppointment.step = 'captcha';
+        };
+        const captchaTitle = computed(() => confirmingAppointment.pendingAction?.type === 'cancel'
+            ? 'Cancel this appointment request?'
+            : (confirmingAppointment.pendingAction?.reschedule ? 'Confirm the rescheduled appointment?' : 'Confirm this appointment?'));
+        const captchaMessage = computed(() => {
+            const request = confirmingAppointment.request;
+            const action = confirmingAppointment.pendingAction;
+            if (!request || !action) return '';
+
+            if (action.type === 'cancel') {
+                return `Service request #${request.id} will be marked as cancelled. Enter the four-digit code below to confirm.`;
+            }
+
+            return action.reschedule
+                ? `Service request #${request.id} will be rescheduled to ${formatDateTime(action.appointment_date, action.appointment_time)} and confirmed. Enter the four-digit code below to confirm.`
+                : `Service request #${request.id} will be confirmed as scheduled. Enter the four-digit code below to confirm.`;
+        });
+        const captchaConfirmLabel = computed(() => (confirmingAppointment.pendingAction?.type === 'cancel' ? 'Cancel Appointment' : 'Confirm Appointment'));
+        const captchaTone = computed(() => (confirmingAppointment.pendingAction?.type === 'cancel' ? 'danger' : 'primary'));
+        const confirmAppointment = (code) => {
+            const request = confirmingAppointment.request;
+            const action = confirmingAppointment.pendingAction;
+            if (!request || !action) return;
+
+            const url = action.type === 'cancel'
+                ? `/admin/requests/${request.id}/cancel-appointment`
+                : `/admin/requests/${request.id}/approve-appointment`;
+            const data = action.type === 'cancel'
+                ? { confirmation_code: code }
+                : { reschedule: action.reschedule, appointment_date: action.appointment_date, appointment_time: action.appointment_time, confirmation_code: code };
+
+            confirmingAppointment.processing = true;
+            router.patch(url, data, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    closeAppointmentFlow();
+                },
+                onError: () => {
+                    confirmingAppointment.step = 'details';
+                },
+                onFinish: () => {
+                    confirmingAppointment.processing = false;
+                },
+            });
+        };
 
         onBeforeUnmount(() => clearTimeout(searchTimer));
 
         return {
+            captchaConfirmLabel,
+            captchaMessage,
+            captchaTitle,
+            captchaTone,
+            closeAppointmentFlow,
+            confirmAppointment,
+            confirmingAppointment,
             confirmProceed,
+            continueToCaptcha,
             filters,
+            needsAppointmentConfirmation,
             load,
             open,
             page,
@@ -123,6 +199,12 @@ export default defineComponent({
                                 <td class="px-4 py-4 text-sm text-slate-700">{{ request.service }}</td>
                                 <td class="px-4 py-4">
                                     <span class="rounded-full px-3 py-1 text-xs font-bold uppercase" :class="request.type === 'appointment' ? 'bg-violet-100 text-violet-700' : 'bg-sky-100 text-[#07559e]'">{{ request.type }}</span>
+                                    <span v-if="needsAppointmentConfirmation(request)" class="ml-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600" title="Awaiting appointment confirmation">
+                                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>Unconfirmed
+                                    </span>
+                                    <span v-else-if="request.type === 'appointment'" class="ml-2 inline-flex items-center gap-1 text-xs font-bold text-emerald-600" title="Appointment confirmed">
+                                        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>Confirmed
+                                    </span>
                                 </td>
                                 <td class="px-4 py-4"><span class="text-sm font-semibold text-slate-700">{{ request.status }}</span></td>
                                 <td class="px-4 py-4 text-sm text-slate-500">{{ request.created_at }}</td>
@@ -132,7 +214,7 @@ export default defineComponent({
                                             <i class="fa-solid fa-eye" aria-hidden="true"></i>View
                                         </button>
                                         <button v-if="request.status_value === 'pending'" type="button" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50" @click="proceed(request)">
-                                            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>Proceed
+                                            <i :class="needsAppointmentConfirmation(request) ? 'fa-solid fa-bolt' : 'fa-solid fa-arrow-right'" aria-hidden="true"></i>{{ needsAppointmentConfirmation(request) ? 'Take Action' : 'Proceed' }}
                                         </button>
                                         <a v-if="request.status_value === 'for-payment' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/payment'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
                                             <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
@@ -168,6 +250,23 @@ export default defineComponent({
                 icon="fa-solid fa-arrow-right"
                 @close="proceeding.request = null"
                 @confirm="confirmProceed"
+            />
+            <AppointmentConfirmModal
+                :open="confirmingAppointment.step === 'details'"
+                :request="confirmingAppointment.request"
+                @close="closeAppointmentFlow"
+                @continue="continueToCaptcha"
+            />
+            <CodeConfirmationModal
+                :open="confirmingAppointment.step === 'captcha'"
+                :processing="confirmingAppointment.processing"
+                :title="captchaTitle"
+                :message="captchaMessage"
+                :confirm-label="captchaConfirmLabel"
+                :tone="captchaTone"
+                icon="fa-solid fa-shield-halved"
+                @close="confirmingAppointment.step = 'details'"
+                @confirm="confirmAppointment"
             />
         </AdminShell>
     `,

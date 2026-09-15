@@ -153,17 +153,10 @@ class RddRequestController extends Controller
         }
 
         $serviceRequest->load(['client', 'rddRequest.items']);
-        $rddRequest = $serviceRequest->rddRequest;
 
         return Inertia::render('admin/rdd-feedback-form', [
             'serviceRequest' => $this->serviceRequestPayload($serviceRequest),
-            'rddRequest' => [
-                ...$this->rddRequestPayload($rddRequest),
-                'feedback_rating' => $rddRequest->feedback_rating,
-                'feedback_message' => $rddRequest->feedback_message,
-                'feedback_received_at' => $rddRequest->feedback_received_at?->format('F, d Y H:i:s'),
-                'reminder_sent_at' => $rddRequest->reminder_sent_at?->format('F, d Y H:i:s'),
-            ],
+            'rddRequest' => $this->rddRequestPayload($serviceRequest->rddRequest),
         ]);
     }
 
@@ -171,12 +164,6 @@ class RddRequestController extends Controller
     {
         if ($error = $this->rddRequestAccessError($serviceRequest, ServiceRequestStatus::AwaitingFeedback, requireRddRequest: true)) {
             return to_route('admin.requests.index')->with('error', $error);
-        }
-
-        $rddRequest = $serviceRequest->rddRequest;
-
-        if ($rddRequest->feedback_received_at !== null) {
-            return back()->with('error', 'Feedback has already been received for this request.');
         }
 
         $smtpSetting = SmtpSetting::query()->first();
@@ -195,8 +182,6 @@ class RddRequestController extends Controller
 
             return back()->with('error', 'We could not send the reminder email. Please check the SMTP configuration and try again.');
         }
-
-        $rddRequest->update(['reminder_sent_at' => now()]);
 
         return back()->with('success', 'Feedback reminder email sent to the client.');
     }
@@ -269,6 +254,10 @@ class RddRequestController extends Controller
 
         if ($serviceRequest->status !== $expectedStatus) {
             return "This request is not {$expectedStatus->label()}.";
+        }
+
+        if (! $requireRddRequest && $serviceRequest->is_appointment && ! $serviceRequest->is_appointment_approved) {
+            return 'Confirm the appointment before creating the R&D request form.';
         }
 
         $hasRddRequest = $serviceRequest->rddRequest()->exists();

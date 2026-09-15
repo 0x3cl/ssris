@@ -35,7 +35,7 @@ class AppointmentController extends Controller
     public function validateBooking(Request $request): JsonResponse
     {
         $request->validate([
-            'appointment_date' => ['required', 'date', 'after_or_equal:today'],
+            'appointment_date' => ['required', 'date', 'after:today'],
             'appointment_time' => ['required', 'date_format:H:i'],
         ]);
 

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['status'])]
+#[Fillable(['status', 'is_appointment_approved', 'appointment_date', 'appointment_time'])]
 class ServiceRequest extends Model
 {
     /** @use HasFactory<ServiceRequestFactory> */
@@ -34,6 +34,7 @@ class ServiceRequest extends Model
             'appointment_date' => 'date',
             'appointment_time' => 'string',
             'is_appointment' => 'boolean',
+            'is_appointment_approved' => 'boolean',
             'service' => ClientService::class,
             'status' => ServiceRequestStatus::class,
         ];

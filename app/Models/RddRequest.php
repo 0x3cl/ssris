@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['service_request_id', 'reference_no', 'due_date', 'sub_total', 'discount', 'total_fee', 'op_no', 'or_no', 'feedback_rating', 'feedback_message', 'feedback_received_at', 'reminder_sent_at'])]
+#[Fillable(['service_request_id', 'reference_no', 'due_date', 'sub_total', 'discount', 'total_fee', 'op_no', 'or_no'])]
 class RddRequest extends Model
 {
     /** @use HasFactory<RddRequestFactory> */
@@ -33,9 +33,6 @@ class RddRequest extends Model
             'sub_total' => 'float',
             'discount' => 'float',
             'total_fee' => 'float',
-            'feedback_rating' => 'integer',
-            'feedback_received_at' => 'datetime',
-            'reminder_sent_at' => 'datetime',
         ];
     }
 }

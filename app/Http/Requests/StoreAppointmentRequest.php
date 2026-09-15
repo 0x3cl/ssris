@@ -24,7 +24,7 @@ class StoreAppointmentRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'appointment_date' => ['required', 'date', 'after_or_equal:today'],
+            'appointment_date' => ['required', 'date', 'after:today'],
             'appointment_time' => ['required', 'date_format:H:i'],
             'firstname' => ['required', 'string', 'max:255'],
             'middlename' => ['nullable', 'string', 'max:255'],

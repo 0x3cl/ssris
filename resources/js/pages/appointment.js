@@ -9,6 +9,14 @@ import SourceModal from '../components/SourceModal';
 import TermsConditionsModal from '../components/TermsConditionsModal';
 import AppointmentStepper from '../components/AppointmentStepper';
 import { markRequiredFields } from '../utils/required-fields';
+import { formatDate, formatTime } from '../utils/format-date';
+
+const minAppointmentDate = (() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return tomorrow.toISOString().slice(0, 10);
+})();
 
 const blankClient = (service = '') => ({
     appointment_date: '',
@@ -393,8 +401,11 @@ export default defineComponent({
             form,
             formErrors,
             confirmTermsAndSubmit,
+            formatDate,
+            formatTime,
             hasSelectedService,
             isAcademe,
+            minAppointmentDate,
             isBusiness,
             isPrivateCompany,
             isLookingUp,
@@ -453,7 +464,7 @@ export default defineComponent({
                             <div class="grid gap-5 sm:grid-cols-2">
                                 <label>
                                     <span class="text-sm font-medium text-slate-700">Preferred date</span>
-                                    <input v-model="form.appointment_date" type="date" :aria-invalid="Boolean(bookingErrors.appointment_date)" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" :class="bookingErrors.appointment_date ? 'border-rose-500 ring-2 ring-rose-100' : ''" />
+                                    <input v-model="form.appointment_date" type="date" :min="minAppointmentDate" :aria-invalid="Boolean(bookingErrors.appointment_date)" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" :class="bookingErrors.appointment_date ? 'border-rose-500 ring-2 ring-rose-100' : ''" />
                                     <p v-if="bookingErrors.appointment_date" class="mt-1 text-sm text-rose-600">{{ bookingErrors.appointment_date[0] }}</p>
                                 </label>
                                 <label>
@@ -653,11 +664,11 @@ export default defineComponent({
                                 <div class="mt-4 grid gap-5 sm:grid-cols-2">
                                     <label>
                                         <span class="text-sm font-medium text-slate-700">Preferred date</span>
-                                        <input :value="form.appointment_date" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700" />
+                                        <input :value="formatDate(form.appointment_date)" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700" />
                                     </label>
                                     <label>
                                         <span class="text-sm font-medium text-slate-700">Preferred time</span>
-                                        <input :value="form.appointment_time" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700" />
+                                        <input :value="formatTime(form.appointment_time)" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700" />
                                     </label>
                                 </div>
                             </section>

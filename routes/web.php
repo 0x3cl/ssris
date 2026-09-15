@@ -39,6 +39,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('delete-challenge', [AdminManagementController::class, 'deleteChallenge'])->name('delete-challenge');
         Route::get('requests', [ServiceRequestController::class, 'index'])->name('requests.index');
         Route::patch('requests/{serviceRequest}/proceed', [ServiceRequestController::class, 'proceed'])->name('requests.proceed');
+        Route::patch('requests/{serviceRequest}/approve-appointment', [ServiceRequestController::class, 'approveAppointment'])->name('requests.approve-appointment');
+        Route::patch('requests/{serviceRequest}/cancel-appointment', [ServiceRequestController::class, 'cancelAppointment'])->name('requests.cancel-appointment');
         Route::get('requests/{serviceRequest}/rdd-request', [RddRequestController::class, 'create'])->name('requests.rdd.create');
         Route::post('requests/{serviceRequest}/rdd-request', [RddRequestController::class, 'store'])->name('requests.rdd.store');
         Route::get('requests/{serviceRequest}/rdd-request/pdf', [RddRequestController::class, 'downloadPdf'])->name('requests.rdd.pdf');
