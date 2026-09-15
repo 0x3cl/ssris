@@ -1,5 +1,12 @@
 import { Head, router } from '@inertiajs/vue3';
-import { computed, defineComponent, reactive, ref } from 'vue';
+import { computed, defineComponent, nextTick, onMounted, reactive, ref } from 'vue';
+import ClientTypeModal from '../components/ClientTypeModal';
+import EmailLookupModal from '../components/EmailLookupModal';
+import IllustratedChoiceModal from '../components/IllustratedChoiceModal';
+import ServiceCard from '../components/ServiceCard';
+import SourceModal from '../components/SourceModal';
+import TermsConditionsModal from '../components/TermsConditionsModal';
+import WalkInStepper from '../components/WalkInStepper';
 
 const blankClient = (service = '') => ({
     firstname: '',
@@ -26,13 +33,58 @@ const blankClient = (service = '') => ({
     source: '',
     service,
     description: '',
+    terms_accepted: false,
 });
+
+const serviceIllustrations = {
+    'rdd-services': 'https://unpkg.com/undraw-svg@1.0.0/svgs/researching.svg',
+    'tsd-lab-services': 'https://unpkg.com/undraw-svg@1.0.0/svgs/science.svg',
+    'tsd-icyt-processing-services': 'https://unpkg.com/undraw-svg@1.0.0/svgs/data-processing.svg',
+    'tips-training-services': 'https://unpkg.com/undraw-svg@1.0.0/svgs/teaching.svg',
+    'tips-plant-tour-services': 'https://unpkg.com/undraw-svg@1.0.0/svgs/watering-plants.svg',
+    'picts-library-registration': 'https://unpkg.com/undraw-svg@1.0.0/svgs/bookshelves.svg',
+};
+
+const clientTypeIllustrations = {
+    academe: 'https://unpkg.com/undraw-svg@1.0.0/svgs/teacher.svg',
+    government: 'https://unpkg.com/undraw-svg@1.0.0/svgs/data-reports.svg',
+    'private-companies': 'https://unpkg.com/undraw-svg@1.0.0/svgs/creation-process.svg',
+    'non-government-organizations': 'https://unpkg.com/undraw-svg@1.0.0/svgs/a-better-world.svg',
+    individual: 'https://unpkg.com/undraw-svg@1.0.0/svgs/about-me.svg',
+};
+
+const sourceIllustrations = {
+    'ptri-website': 'https://unpkg.com/undraw-svg@1.0.0/svgs/app-data.svg',
+    internet: 'https://unpkg.com/undraw-svg@1.0.0/svgs/data-at-work.svg',
+    'newspaper-magazine': 'https://unpkg.com/undraw-svg@1.0.0/svgs/reading-a-book.svg',
+    referral: 'https://unpkg.com/undraw-svg@1.0.0/svgs/a-better-world.svg',
+};
+
+const choiceIllustrationPaths = [
+    'researching',
+    'science',
+    'data-processing',
+    'teaching',
+    'watering-plants',
+    'bookshelves',
+    'all-the-data',
+    'data-reports',
+];
+
+const withIllustrations = (choices, offset = 0) => choices.map((choice, index) => ({
+    ...choice,
+    illustration: `https://unpkg.com/undraw-svg@1.0.0/svgs/${choiceIllustrationPaths[(index + offset) % choiceIllustrationPaths.length]}.svg`,
+}));
 
 export default defineComponent({
     name: 'WalkIn',
-    components: { Head },
+    components: { ClientTypeModal, EmailLookupModal, Head, IllustratedChoiceModal, ServiceCard, SourceModal, TermsConditionsModal, WalkInStepper },
     props: {
         selectedService: {
+            type: String,
+            default: null,
+        },
+        selectedEmail: {
             type: String,
             default: null,
         },
@@ -63,14 +115,36 @@ export default defineComponent({
     },
     setup(props) {
         const selectedService = ref(props.selectedService);
-        const email = ref('');
+        const email = ref(props.selectedEmail ?? '');
         const form = reactive(blankClient(props.selectedService));
-        const currentStep = ref(1);
+        const currentStep = ref(props.selectedService && props.selectedEmail ? 2 : 1);
         const isLookingUp = ref(false);
         const lookupError = ref('');
         const showWelcome = ref(false);
+        const showEmailModal = ref(false);
+        const showClientTypeModal = ref(false);
+        const showSourceModal = ref(false);
+        const showTermsModal = ref(false);
+        const activeChoice = ref(null);
+        const formErrors = ref({});
+        const isValidatingDetails = ref(false);
         const returningClient = ref(false);
         const hasSelectedService = computed(() => Boolean(selectedService.value));
+        const isAcademe = computed(() => form.type_client === 'academe');
+        const isBusiness = computed(() => ['government', 'private-companies'].includes(form.type_client));
+        const isPrivateCompany = computed(() => form.type_client === 'private-companies');
+        const selectedClientTypeLabel = computed(() => props.clientTypes.find((type) => type.value === form.type_client)?.label ?? 'Choose client type');
+        const selectedSourceLabel = computed(() => props.sources.find((source) => source.value === form.source)?.label ?? 'Choose source');
+        const selectedServiceLabel = computed(() => props.services.find((service) => service.value === form.service)?.label ?? form.service);
+        const selectedBusinessRoleLabel = computed(() => props.businessRoles.find((role) => role.value === form.business_role)?.label ?? form.business_role);
+        const selectedEnterpriseSizeLabel = computed(() => props.enterpriseSizes.find((size) => size.value === form.enterprise_size)?.label ?? form.enterprise_size);
+        const selectedMarketLabel = computed(() => props.markets.find((market) => market.value === form.market)?.label ?? form.market);
+        const choiceConfig = computed(() => ({
+            gender: { field: 'gender', title: 'Choose gender', choices: withIllustrations([{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }, { value: 'prefer-not-to-say', label: 'Prefer not to say' }], 6) },
+            business_role: { field: 'business_role', title: 'Choose business role', choices: withIllustrations(props.businessRoles, 0) },
+            enterprise_size: { field: 'enterprise_size', title: 'Choose enterprise size', choices: withIllustrations(props.enterpriseSizes, 3) },
+            market: { field: 'market', title: 'Choose market', choices: withIllustrations(props.markets, 6) },
+        }));
 
         const findClient = async () => {
             lookupError.value = '';
@@ -92,8 +166,9 @@ export default defineComponent({
                 form.service = selectedService.value;
                 returningClient.value = Boolean(data.client);
                 showWelcome.value = Boolean(data.client);
+                showEmailModal.value = false;
                 currentStep.value = 2;
-                window.history.pushState({}, '', `/walk-in?selected=${encodeURIComponent(selectedService.value)}`);
+                window.history.pushState({}, '', `/walk-in?selected=${encodeURIComponent(selectedService.value)}&email=${encodeURIComponent(email.value)}`);
             } catch {
                 lookupError.value = 'We could not check that email. Please try again.';
             } finally {
@@ -101,67 +176,203 @@ export default defineComponent({
             }
         };
 
+        const openEmailModal = (service) => {
+            selectedService.value = service;
+            showEmailModal.value = true;
+        };
+
+        const selectClientType = (clientType) => {
+            form.type_client = clientType;
+            showClientTypeModal.value = false;
+        };
+
+        const selectSource = (source) => {
+            form.source = source;
+            showSourceModal.value = false;
+        };
+
+        const selectChoice = (value) => {
+            form[choiceConfig.value[activeChoice.value].field] = value;
+            activeChoice.value = null;
+        };
+
+        const errorLabels = {
+            firstname: 'First name', middlename: 'Middle name', lastname: 'Last name', age: 'Age', gender: 'Gender', email: 'Email', mobile_no: 'Mobile number', tel_no: 'Telephone number', fax_no: 'Fax number', address: 'Address', region: 'Region', province: 'Province', municipality: 'Municipality', type_client: 'Client type', source: 'Source', company: 'Company', school_name: 'School name', business_role: 'Business role', enterprise_size: 'Enterprise size', market: 'Market', products: 'Products', description: 'Request description',
+        };
+
+        const fieldForError = (fieldName) => {
+            const label = errorLabels[fieldName === 'fullname' ? 'firstname' : fieldName];
+
+            return [...document.querySelectorAll('#client-details label')]
+                .find((element) => element.querySelector('span')?.textContent.trim() === label)
+                ?.querySelector('input, textarea')
+                ?? [...document.querySelectorAll('#client-details button')]
+                    .find((element) => element.parentElement?.querySelector(':scope > span')?.textContent.trim() === label);
+        };
+
+        const displayFieldErrors = (errors) => {
+            nextTick(() => {
+                document.querySelectorAll('.field-error').forEach((element) => element.remove());
+                document.querySelectorAll('#client-details [aria-invalid="true"]').forEach((element) => {
+                    element.removeAttribute('aria-invalid');
+                    element.classList.remove('border-rose-500', 'ring-2', 'ring-rose-100');
+                });
+
+                Object.entries(errors).forEach(([fieldName, messages]) => {
+                    const field = fieldForError(fieldName);
+
+                    if (!field) {
+                        return;
+                    }
+
+                    const message = Array.isArray(messages) ? messages[0] : messages;
+                    const messageElement = document.createElement('p');
+                    messageElement.className = 'field-error mt-1 text-sm text-rose-600';
+                    messageElement.textContent = message;
+                    field.setAttribute('aria-invalid', 'true');
+                    field.classList.add('border-rose-500', 'ring-2', 'ring-rose-100');
+                    (field.closest('label') ?? field.parentElement)?.append(messageElement);
+                });
+
+                const field = fieldForError(Object.keys(errors)[0]);
+
+                if (field) {
+                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    field.focus({ preventScroll: true });
+                }
+            });
+        };
+
+        const validateDetails = async () => {
+            formErrors.value = {};
+            displayFieldErrors({});
+            isValidatingDetails.value = true;
+
+            try {
+                const response = await fetch('/walk-in/validate', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    },
+                    body: JSON.stringify(form),
+                });
+
+                if (response.ok) {
+                    currentStep.value = 3;
+
+                    return;
+                }
+
+                const data = await response.json();
+                formErrors.value = data.errors ?? { form: ['We could not validate your details.'] };
+                displayFieldErrors(formErrors.value);
+            } catch {
+                formErrors.value = { form: ['We could not validate your details. Please try again.'] };
+            } finally {
+                isValidatingDetails.value = false;
+            }
+        };
+
+        const submitWalkIn = () => {
+            formErrors.value = {};
+            displayFieldErrors({});
+
+            router.post('/walk-in', form, {
+                onError: (errors) => {
+                    formErrors.value = errors;
+                    currentStep.value = 2;
+                    displayFieldErrors(errors);
+                },
+            });
+        };
+
+        const openTermsModal = () => {
+            showTermsModal.value = true;
+        };
+
+        const confirmTermsAndSubmit = () => {
+            form.terms_accepted = true;
+            showTermsModal.value = false;
+            submitWalkIn();
+        };
+
+        onMounted(() => {
+            if (props.selectedService && props.selectedEmail) {
+                findClient();
+            }
+        });
+
         return {
+            clientTypeIllustrations,
+            choiceConfig,
+            activeChoice,
             currentStep,
             email,
             findClient,
             form,
+            formErrors,
+            confirmTermsAndSubmit,
             hasSelectedService,
+            isAcademe,
+            isBusiness,
+            isPrivateCompany,
             isLookingUp,
+            isValidatingDetails,
             lookupError,
+            openEmailModal,
+            openTermsModal,
+            selectClientType,
+            selectedClientTypeLabel,
+            selectedBusinessRoleLabel,
+            selectedEnterpriseSizeLabel,
+            selectedMarketLabel,
+            selectedServiceLabel,
+            selectedSourceLabel,
+            selectSource,
+            selectChoice,
             returningClient,
             selectedService,
+            serviceIllustrations,
+            sourceIllustrations,
+            showClientTypeModal,
+            showEmailModal,
             showWelcome,
-            submitWalkIn: () => router.post('/walk-in', form),
+            showSourceModal,
+            showTermsModal,
+            submitWalkIn,
+            validateDetails,
         };
     },
     template: `
         <Head title="Walk In" />
 
-        <main class="min-h-screen bg-slate-50 px-4 py-10 sm:px-6">
-            <section class="mx-auto w-full max-w-4xl">
-                <a href="/" class="text-sm font-semibold text-sky-700 hover:text-sky-900">← Back to service options</a>
-
-                <header class="mt-7">
-                    <p class="text-sm font-semibold tracking-[0.2em] text-sky-700 uppercase">Walk In</p>
-                    <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Start your service request</h1>
-                    <p class="mt-2 text-slate-600">Choose a service, then confirm your client information.</p>
+        <main class="min-h-screen bg-white px-4 py-8 sm:px-6 sm:py-12">
+            <section class="mx-auto w-full max-w-6xl">
+                <header class="flex items-center gap-4 border-b border-slate-200/80 pb-5">
+                    <a href="/" class="flex h-9 w-9 items-center justify-center rounded-full text-xl text-slate-500 transition hover:bg-white hover:text-[#008dcc]" aria-label="Back to service options">←</a>
+                    <div><h1 class="font-semibold text-slate-900">Walk-in service request</h1><p class="text-xs text-[#3d68b1]">Complete the steps below</p></div>
                 </header>
 
-                <ol class="mt-8 grid gap-3 sm:grid-cols-3" aria-label="Walk-in request steps">
-                    <li class="rounded-xl border px-4 py-3" :class="currentStep >= 1 ? 'border-sky-200 bg-sky-50 text-sky-900' : 'border-slate-200 bg-white text-slate-600'">
-                        <span class="font-semibold">1. Select service</span>
-                    </li>
-                    <li class="rounded-xl border px-4 py-3" :class="currentStep >= 2 ? 'border-sky-200 bg-sky-50 text-sky-900' : 'border-slate-200 bg-white text-slate-400'">
-                        <span class="font-semibold">2. Client details</span>
-                    </li>
-                    <li class="rounded-xl border px-4 py-3" :class="currentStep === 3 ? 'border-sky-200 bg-sky-50 text-sky-900' : 'border-slate-200 bg-white text-slate-400'"><span class="font-semibold">3. Submit</span></li>
-                </ol>
+                <div class="mx-auto mt-10 w-full py-5 sm:py-8">
+                <WalkInStepper :current-step="currentStep" />
 
-                <section v-if="currentStep === 1" class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
+                <section v-if="currentStep === 1" class="mt-8 border-t border-slate-100 pt-7">
                     <h2 class="text-xl font-semibold text-slate-900">Choose a service</h2>
                     <p class="mt-1 text-slate-600">Your choice will remain in the page URL when you continue.</p>
 
-                    <div class="mt-6 grid gap-3 sm:grid-cols-2">
-                        <button
+                    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <ServiceCard
                             v-for="service in services"
                             :key="service.value"
-                            type="button"
-                            class="rounded-2xl border p-4 text-left transition focus-visible:ring-4 focus-visible:ring-sky-200 focus-visible:outline-none"
-                            :class="selectedService === service.value ? 'border-sky-600 bg-sky-50 ring-1 ring-sky-600' : 'border-slate-200 hover:border-sky-300 hover:bg-slate-50'"
-                            @click="selectedService = service.value"
-                        >
-                            <img
-                                src="https://unpkg.com/undraw-svg@1.0.0/svgs/booking.svg"
-                                :alt="service.label + ' illustration'"
-                                class="mb-3 h-20 w-full object-contain"
-                            />
-                            <span class="font-semibold text-slate-900">{{ service.label }}</span>
-                        </button>
+                            :illustration="serviceIllustrations[service.value]"
+                            :selected="selectedService === service.value"
+                            :service="service"
+                            @select="openEmailModal"
+                        />
                     </div>
 
-                    <form class="mt-8 flex flex-col gap-3 sm:flex-row" @submit.prevent="findClient"><label class="sr-only" for="client-email-lookup">Email address</label><input id="client-email-lookup" v-model="email" type="email" required autocomplete="email" placeholder="you@example.com" class="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3" /><button type="submit" :disabled="!selectedService || isLookingUp" class="rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white disabled:bg-slate-300">{{ isLookingUp ? 'Checking…' : 'Next' }}</button></form>
-                    <p v-if="lookupError" class="mt-2 text-sm text-rose-700" role="alert">{{ lookupError }}</p>
                 </section>
 
                 <section v-else-if="currentStep === 2" class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
@@ -170,59 +381,52 @@ export default defineComponent({
                             <h2 class="text-xl font-semibold text-slate-900">Find your client record</h2>
                             <p class="mt-1 text-slate-600">Enter your email to save time if you have visited before.</p>
                         </div>
-                        <button type="button" class="text-sm font-semibold text-sky-700 hover:text-sky-900" @click="currentStep = 1">Change service</button>
+                        <button type="button" class="text-sm font-semibold text-[#008dcc] hover:text-[#006f9f]" @click="currentStep = 1">Change service</button>
                     </div>
 
-                    <form v-if="form.email" class="mt-8 border-t border-slate-200 pt-8" @submit.prevent="currentStep = 3">
+                    <form v-if="form.email" id="client-details" class="mt-8 border-t border-slate-200 pt-8" @submit.prevent="validateDetails">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <h2 class="text-xl font-semibold text-slate-900">Client information</h2>
-                                <p class="mt-1 text-slate-600">{{ returningClient ? 'Review and update your details if needed.' : 'Complete all required fields to continue.' }}</p>
+                                <p class="mt-1 text-slate-600">{{ returningClient ? 'Review and update your details if needed.' : 'Complete all fields to continue.' }}</p>
                             </div>
                             <span class="rounded-full px-3 py-1 text-sm font-semibold" :class="returningClient ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'">{{ returningClient ? 'Returning client' : 'New client' }}</span>
                         </div>
 
-                        <div class="mt-6 grid gap-5 sm:grid-cols-2">
-                            <label class="block"><span class="text-sm font-medium text-slate-700">First name</span><input v-model="form.firstname" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Middle name</span><input v-model="form.middlename" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Last name</span><input v-model="form.lastname" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Full name</span><input v-model="form.fullname" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Email</span><input v-model="form.email" type="email" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Mobile number</span><input v-model="form.mobile_no" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Fax number</span><input v-model="form.fax_no" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Age</span><input v-model="form.age" type="number" min="0" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Gender</span><input v-model="form.gender" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Telephone number</span><input v-model="form.tel_no" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block sm:col-span-2"><span class="text-sm font-medium text-slate-700">Address</span><input v-model="form.address" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Region</span><input v-model="form.region" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Province</span><input v-model="form.province" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Municipality</span><input v-model="form.municipality" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Client type</span><select v-model="form.type_client" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">Select type</option><option v-for="type in clientTypes" :key="type.value" :value="type.value">{{ type.label }}</option></select></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Company</span><input v-model="form.company" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">School name</span><input v-model="form.school_name" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Business role</span><select v-model="form.business_role" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">Not applicable</option><option v-for="role in businessRoles" :key="role.value" :value="role.value">{{ role.label }}</option></select></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Enterprise size</span><select v-model="form.enterprise_size" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">Not applicable</option><option v-for="size in enterpriseSizes" :key="size.value" :value="size.value">{{ size.label }}</option></select></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Market</span><select v-model="form.market" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">Not applicable</option><option v-for="market in markets" :key="market.value" :value="market.value">{{ market.label }}</option></select></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Products</span><input v-model="form.products" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Source</span><select v-model="form.source" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"><option value="">Select source</option><option v-for="source in sources" :key="source.value" :value="source.value">{{ source.label }}</option></select></label>
-                            <label class="block"><span class="text-sm font-medium text-slate-700">Selected service</span><select v-model="form.service" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"><option v-for="service in services" :key="service.value" :value="service.value">{{ service.label }}</option></select></label>
-                            <label class="block sm:col-span-2"><span class="text-sm font-medium text-slate-700">Description</span><textarea v-model="form.description" required rows="4" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"></textarea></label>
+                        <div class="mt-8 space-y-10">
+                            <section class="border-t border-slate-100 pt-8"><h3 class="text-base font-semibold text-slate-900">Contact information</h3><div class="mt-5 grid gap-5 md:grid-cols-6"><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Email</span><input v-model="form.email" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Mobile number</span><input v-model="form.mobile_no" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Telephone number</span><input v-model="form.tel_no" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Fax number</span><input v-model="form.fax_no" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><label class="md:col-span-6"><span class="text-sm font-medium text-slate-700">Address</span><textarea v-model="form.address" rows="3" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"></textarea></label></div></section>
+                            <section class="border-t border-slate-100 pt-8"><h3 class="text-base font-semibold text-slate-900">Background</h3><div class="mt-5 grid gap-5 md:grid-cols-6"><label class="md:col-span-2"><span class="text-sm font-medium text-slate-700">Region</span><input v-model="form.region" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><label class="md:col-span-2"><span class="text-sm font-medium text-slate-700">Province</span><input v-model="form.province" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><label class="md:col-span-2"><span class="text-sm font-medium text-slate-700">Municipality</span><input v-model="form.municipality" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><div class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Client type</span><button type="button" class="mt-1 flex w-full items-center justify-between rounded-xl border border-slate-300 px-3 py-2.5 text-left" @click="showClientTypeModal = true"><span :class="form.type_client ? 'text-slate-900' : 'text-slate-400'">{{ selectedClientTypeLabel }}</span><span aria-hidden="true">⌄</span></button></div><div class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Source</span><button type="button" class="mt-1 flex w-full items-center justify-between rounded-xl border border-slate-300 px-3 py-2.5 text-left" @click="showSourceModal = true"><span :class="form.source ? 'text-slate-900' : 'text-slate-400'">{{ selectedSourceLabel }}</span><span aria-hidden="true">⌄</span></button></div><label v-if="isBusiness" class="md:col-span-6"><span class="text-sm font-medium text-slate-700">Company</span><input v-model="form.company" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><label v-if="isAcademe" class="md:col-span-6"><span class="text-sm font-medium text-slate-700">School name</span><input v-model="form.school_name" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label><template v-if="isPrivateCompany"><div class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Business role</span><button type="button" class="mt-1 flex w-full items-center justify-between rounded-xl border border-slate-300 px-3 py-2.5 text-left" @click="activeChoice = 'business_role'"><span :class="form.business_role ? 'text-slate-900' : 'text-slate-400'">{{ form.business_role || 'Choose business role' }}</span><span>⌄</span></button></div><div class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Enterprise size</span><button type="button" class="mt-1 flex w-full items-center justify-between rounded-xl border border-slate-300 px-3 py-2.5 text-left" @click="activeChoice = 'enterprise_size'"><span :class="form.enterprise_size ? 'text-slate-900' : 'text-slate-400'">{{ form.enterprise_size || 'Choose enterprise size' }}</span><span>⌄</span></button></div><div class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Market</span><button type="button" class="mt-1 flex w-full items-center justify-between rounded-xl border border-slate-300 px-3 py-2.5 text-left" @click="activeChoice = 'market'"><span :class="form.market ? 'text-slate-900' : 'text-slate-400'">{{ form.market || 'Choose market' }}</span><span>⌄</span></button></div><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Products</span><input v-model="form.products" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label></template><label class="md:col-span-6"><span class="text-sm font-medium text-slate-700">Request description</span><textarea v-model="form.description" rows="4" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"></textarea></label></div></section>
                         </div>
-                        <div class="mt-8 flex justify-end"><button type="submit" class="rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white">Review request</button></div>
+                        <div class="mt-8 flex justify-end"><button type="submit" :disabled="isValidatingDetails" class="rounded-xl bg-[#00aeef] px-5 py-3 font-semibold text-white hover:bg-[#008dcc] disabled:cursor-not-allowed disabled:bg-slate-400">{{ isValidatingDetails ? 'Validating…' : 'Next' }}</button></div>
                     </form>
                 </section>
-
-                <section v-else class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8"><h2 class="text-xl font-semibold text-slate-900">Ready to submit?</h2><p class="mt-2 text-slate-600">Your walk-in request for <strong>{{ form.service }}</strong> will be submitted with the client details shown in the previous step.</p><div class="mt-8 flex justify-between gap-3"><button type="button" class="rounded-xl px-5 py-3 font-semibold text-sky-700" @click="currentStep = 2">Back</button><button type="button" class="rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white" @click="submitWalkIn">Submit walk-in request</button></div></section>
+                <section v-else class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
+                    <div class="border-b border-slate-200 pb-6"><h2 class="text-xl font-semibold text-slate-900">Review your request</h2><p class="mt-1 text-slate-600">Check the information below before submitting your walk-in request.</p></div>
+                    <form class="mt-8 space-y-8" @submit.prevent="openTermsModal">
+                        <section><h3 class="text-base font-semibold text-slate-900">Service selected</h3><label class="mt-4 block"><span class="text-sm font-medium text-slate-700">Service</span><input :value="selectedServiceLabel" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700" /></label></section>
+                        <section class="border-t border-slate-100 pt-7"><h3 class="text-base font-semibold text-slate-900">Personal information</h3><div class="mt-4 grid gap-5 md:grid-cols-6"><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">First name</span><input :value="form.firstname" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Middle name</span><input :value="form.middlename || '—'" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Last name</span><input :value="form.lastname" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Age</span><input :value="form.age" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-6"><span class="text-sm font-medium text-slate-700">Gender</span><input :value="form.gender" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label></div></section>
+                        <section class="border-t border-slate-100 pt-7"><h3 class="text-base font-semibold text-slate-900">Contact information</h3><div class="mt-4 grid gap-5 md:grid-cols-6"><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Email</span><input :value="form.email" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Mobile number</span><input :value="form.mobile_no" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Telephone number</span><input :value="form.tel_no" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Fax number</span><input :value="form.fax_no || '—'" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-6"><span class="text-sm font-medium text-slate-700">Address</span><textarea :value="form.address" readonly rows="3" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"></textarea></label></div></section>
+                        <section class="border-t border-slate-100 pt-7"><h3 class="text-base font-semibold text-slate-900">Background</h3><div class="mt-4 grid gap-5 md:grid-cols-6"><label class="md:col-span-2"><span class="text-sm font-medium text-slate-700">Region</span><input :value="form.region" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-2"><span class="text-sm font-medium text-slate-700">Province</span><input :value="form.province" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-2"><span class="text-sm font-medium text-slate-700">Municipality</span><input :value="form.municipality" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Client type</span><input :value="selectedClientTypeLabel" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Source</span><input :value="selectedSourceLabel" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label v-if="isBusiness" class="md:col-span-6"><span class="text-sm font-medium text-slate-700">Company</span><input :value="form.company" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label v-if="isAcademe" class="md:col-span-6"><span class="text-sm font-medium text-slate-700">School name</span><input :value="form.school_name" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><template v-if="isPrivateCompany"><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Business role</span><input :value="selectedBusinessRoleLabel" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Enterprise size</span><input :value="selectedEnterpriseSizeLabel" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Market</span><input :value="selectedMarketLabel" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label><label class="md:col-span-3"><span class="text-sm font-medium text-slate-700">Products</span><input :value="form.products" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label></template><label class="md:col-span-6"><span class="text-sm font-medium text-slate-700">Request description</span><textarea :value="form.description" readonly rows="4" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"></textarea></label></div></section>
+                        <div class="flex justify-between gap-3 border-t border-slate-100 pt-7"><button type="button" class="rounded-xl px-5 py-3 font-semibold text-[#008dcc]" @click="currentStep = 2">Edit details</button><button type="submit" class="rounded-xl bg-[#00aeef] px-5 py-3 font-semibold text-white hover:bg-[#008dcc]">Submit walk-in request</button></div>
+                    </form>
+                </section>
+                </div>
             </section>
-
+            <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
             <div v-if="showWelcome" class="fixed inset-0 z-10 flex items-center justify-center bg-slate-950/45 p-4" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
-                <div class="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
+                <div class="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-8">
                     <div class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl" aria-hidden="true">✓</div>
                     <h2 id="welcome-title" class="mt-5 text-2xl font-semibold text-slate-900">Welcome back, {{ form.firstname }}!</h2>
                     <p class="mt-2 text-slate-600">We found your client record and filled in your details. Please review them before continuing.</p>
-                    <button type="button" class="mt-6 w-full rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white hover:bg-sky-800" @click="showWelcome = false">Review my details</button>
+                    <button type="button" class="mt-6 w-full rounded-xl bg-[#00aeef] px-5 py-3 font-semibold text-white hover:bg-[#008dcc]" @click="showWelcome = false">Review my details</button>
                 </div>
             </div>
+            </Transition>
+            <EmailLookupModal :email="email" :error="lookupError" :loading="isLookingUp" :open="showEmailModal" @close="showEmailModal = false" @submit="findClient" @update:email="email = $event" />
+            <ClientTypeModal :client-types="clientTypes" :illustrations="clientTypeIllustrations" :open="showClientTypeModal" @close="showClientTypeModal = false" @select="selectClientType" />
+            <SourceModal :illustrations="sourceIllustrations" :open="showSourceModal" :sources="sources" @close="showSourceModal = false" @select="selectSource" />
+            <IllustratedChoiceModal :choices="activeChoice ? choiceConfig[activeChoice].choices : []" :open="Boolean(activeChoice)" :title="activeChoice ? choiceConfig[activeChoice].title : ''" @close="activeChoice = null" @select="selectChoice" />
+            <TermsConditionsModal :open="showTermsModal" @close="showTermsModal = false" @confirm="confirmTermsAndSubmit" />
         </main>
     `,
 });

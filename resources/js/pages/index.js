@@ -7,18 +7,20 @@ export default defineComponent({
     template: `
         <Head title="Choose a service" />
 
-        <main class="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
-            <section class="w-full max-w-5xl">
-                <div class="mx-auto max-w-xl text-center">
-                    <p class="text-sm font-semibold tracking-[0.2em] text-sky-700 uppercase">Service request</p>
-                    <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">How would you like to continue?</h1>
-                    <p class="mt-3 text-base text-slate-600">Choose the option that best fits your visit.</p>
-                </div>
+        <main class="bg-slate-50 px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16">
+            <section class="mx-auto grid w-full max-w-[1800px] gap-10 lg:grid-cols-[1.1fr_0.9fr] xl:gap-14 lg:items-stretch">
+                <aside class="overflow-hidden rounded-3xl shadow-sm">
+                    <img src="/assets/landing/left-panel-bg.png" alt="Registration Information System: PTRI services for laboratory testing and analysis, textile processing, technical training, and facility tours" class="h-full w-full object-cover" />
+                </aside>
 
-                <div class="mt-10 grid gap-6 md:grid-cols-2">
+                <div class="flex flex-col justify-center">
+                    <p class="text-sm font-semibold tracking-[0.2em] text-sky-700 uppercase">Service request</p>
+                    <h2 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">How would you like to continue?</h2>
+                    <p class="mt-3 text-base text-slate-600">Choose the option that best fits your visit.</p>
+                    <div class="mt-8 grid gap-5 md:grid-cols-2">
                     <a
                         href="/walk-in"
-                        class="group flex min-h-96 flex-col items-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:border-sky-300 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-sky-200 focus-visible:outline-none"
+                        class="group flex min-h-80 flex-col items-center rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-sky-300 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-sky-200 focus-visible:outline-none"
                     >
                         <img
                             src="https://unpkg.com/undraw-svg@1.0.0/svgs/walk-in-the-city.svg"
@@ -32,7 +34,7 @@ export default defineComponent({
 
                     <a
                         href="/book-an-appointment"
-                        class="group flex min-h-96 flex-col items-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-violet-200 focus-visible:outline-none"
+                        class="group flex min-h-80 flex-col items-center rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-violet-200 focus-visible:outline-none"
                     >
                         <img
                             src="https://unpkg.com/undraw-svg@1.0.0/svgs/schedule.svg"
@@ -43,6 +45,23 @@ export default defineComponent({
                         <p class="mt-2 text-slate-600">Reserve a date and time that works for you.</p>
                         <span class="mt-6 font-semibold text-violet-700 group-hover:text-violet-800">Continue <span aria-hidden="true">→</span></span>
                     </a>
+
+                    <a
+                        href="https://www.lbp-eservices.com/egps/portal/index.jsp"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex min-h-52 items-center gap-6 rounded-3xl border border-emerald-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-emerald-400 hover:shadow-xl focus-visible:ring-4 focus-visible:ring-emerald-200 focus-visible:outline-none md:col-span-2 sm:px-8"
+                    >
+                        <div class="flex h-28 w-36 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 p-5 sm:h-32 sm:w-44">
+                            <img
+                                src="/assets/landbank.png"
+                                alt="LANDBANK logo"
+                                class="max-h-full max-w-full object-contain"
+                            >
+                        </div>
+                        <div><h2 class="text-xl font-semibold text-slate-900 sm:text-2xl">LANDBANK E-Payment Facility</h2><p class="mt-2 text-slate-600">Continue to the official LANDBANK online payment portal.</p><span class="mt-5 block font-semibold text-emerald-700 group-hover:text-emerald-800">Open payment portal <span aria-hidden="true">↗</span></span></div>
+                    </a>
+                    </div>
                 </div>
             </section>
         </main>

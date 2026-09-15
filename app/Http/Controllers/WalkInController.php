@@ -26,6 +26,7 @@ class WalkInController extends Controller
 
         return Inertia::render('walk-in', [
             'selectedService' => $selectedService?->value,
+            'selectedEmail' => filter_var($request->query('email'), FILTER_VALIDATE_EMAIL) ?: null,
             'services' => $this->options(ClientService::cases()),
             'clientTypes' => $this->options(ClientType::cases()),
             'businessRoles' => $this->options(ClientBusinessRole::cases()),
@@ -76,9 +77,17 @@ class WalkInController extends Controller
         ]);
     }
 
+    public function validateDetails(StoreWalkInRequest $request): JsonResponse
+    {
+        $request->validated();
+
+        return response()->json();
+    }
+
     public function store(StoreWalkInRequest $request, ClientServiceManager $clientService): RedirectResponse
     {
         $data = $request->validated();
+        $data['fullname'] = trim($data['firstname'].' '.$data['lastname']);
 
         DB::transaction(function () use ($clientService, $data): void {
             $existingClient = Client::query()->firstWhere('email', $data['email']);
