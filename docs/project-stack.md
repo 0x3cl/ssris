@@ -10,6 +10,7 @@
 | Styling | Tailwind CSS 4 |
 | Build tool | Vite 8 with Laravel Vite plugin |
 | Database access | Laravel Eloquent and query builder |
+| Roles and permissions | Spatie Laravel Permission 8 |
 | Tests | PHPUnit 12 |
 | Code formatting | Laravel Pint |
 

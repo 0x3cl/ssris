@@ -8,6 +8,7 @@ import ServiceCard from '../components/ServiceCard';
 import SourceModal from '../components/SourceModal';
 import TermsConditionsModal from '../components/TermsConditionsModal';
 import WalkInStepper from '../components/WalkInStepper';
+import { markRequiredFields } from '../utils/required-fields';
 
 const blankClient = (service = '') => ({
     firstname: '',
@@ -201,6 +202,7 @@ export default defineComponent({
         const errorLabels = {
             firstname: 'First name', middlename: 'Middle name', lastname: 'Last name', age: 'Age', gender: 'Gender', email: 'Email', mobile_no: 'Mobile number', tel_no: 'Telephone number', fax_no: 'Fax number', address: 'Address', region: 'Region', province: 'Province', municipality: 'Municipality', type_client: 'Client type', source: 'Source', company: 'Company', school_name: 'School name', business_role: 'Business role', enterprise_size: 'Enterprise size', market: 'Market', products: 'Products', description: 'Request description',
         };
+        const markClientRequiredFields = () => nextTick(() => markRequiredFields('#client-details', ['First name', 'Last name', 'Age', 'Gender', 'Email', 'Mobile number', 'Telephone number', 'Address', 'Region', 'Province', 'Municipality', 'Client type', 'Source', 'Company', 'School name', 'Business role', 'Enterprise size', 'Market', 'Products', 'Request description']));
 
         const fieldForError = (fieldName) => {
             const label = errorLabels[fieldName === 'fullname' ? 'firstname' : fieldName];
@@ -284,7 +286,8 @@ export default defineComponent({
             router.post('/walk-in', form, {
                 onError: (errors) => {
                     formErrors.value = errors;
-                    currentStep.value = 2;
+                currentStep.value = 2;
+                markClientRequiredFields();
                     displayFieldErrors(errors);
                 },
             });
@@ -391,7 +394,7 @@ export default defineComponent({
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <h2 class="text-xl font-semibold text-slate-900">Client information</h2>
-                                <p class="mt-1 text-slate-600">{{ returningClient ? 'Review and update your details if needed.' : 'Complete all fields to continue.' }}</p>
+                                <p class="mt-1 text-slate-600">{{ returningClient ? 'Review and update your details if needed.' : 'Complete all fields to continue.' }} Fields marked with <span class="font-semibold text-rose-600">*</span> are required.</p>
                             </div>
                             <span class="rounded-full px-3 py-1 text-sm font-semibold" :class="returningClient ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'">{{ returningClient ? 'Returning client' : 'New client' }}</span>
                         </div>

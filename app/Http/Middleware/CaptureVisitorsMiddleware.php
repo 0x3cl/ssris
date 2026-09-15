@@ -16,6 +16,9 @@ class CaptureVisitorsMiddleware
     public function handle(Request $request, Closure $next): Response
     {
 
+        $ip = $request->getClientIp();
+        // dd($ip);
+
         return $next($request);
     }
 }

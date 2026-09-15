@@ -8,6 +8,7 @@ import ServiceCard from '../components/ServiceCard';
 import SourceModal from '../components/SourceModal';
 import TermsConditionsModal from '../components/TermsConditionsModal';
 import AppointmentStepper from '../components/AppointmentStepper';
+import { markRequiredFields } from '../utils/required-fields';
 
 const blankClient = (service = '') => ({
     appointment_date: '',
@@ -209,6 +210,7 @@ export default defineComponent({
         const errorLabels = {
             firstname: 'First name', middlename: 'Middle name', lastname: 'Last name', age: 'Age', gender: 'Gender', email: 'Email', mobile_no: 'Mobile number', tel_no: 'Telephone number', fax_no: 'Fax number', address: 'Address', region: 'Region', province: 'Province', municipality: 'Municipality', type_client: 'Client type', source: 'Source', company: 'Company', school_name: 'School name', business_role: 'Business role', enterprise_size: 'Enterprise size', market: 'Market', products: 'Products', description: 'Request description',
         };
+        const markClientRequiredFields = () => nextTick(() => markRequiredFields('#client-details', ['First name', 'Last name', 'Age', 'Gender', 'Email', 'Mobile number', 'Telephone number', 'Address', 'Region', 'Province', 'Municipality', 'Client type', 'Source', 'Company', 'School name', 'Business role', 'Enterprise size', 'Market', 'Products', 'Request description']));
 
         const fieldForError = (fieldName) => {
             const label = errorLabels[fieldName === 'fullname' ? 'firstname' : fieldName];
@@ -333,7 +335,8 @@ export default defineComponent({
                         return;
                     }
 
-                    currentStep.value = 3;
+                currentStep.value = 3;
+                markClientRequiredFields();
                     displayFieldErrors(errors);
                 },
             });
@@ -414,7 +417,7 @@ export default defineComponent({
                 <AppointmentStepper :current-step="currentStep" />
 
                 <section v-if="currentStep === 1" class="mt-6 flex min-h-[320px] flex-col rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-                    <div><h2 class="text-xl font-semibold text-slate-900">Booking details</h2><p class="mt-1 text-slate-600">Choose the date and time you would prefer to visit PTRI.</p></div>
+                    <div><h2 class="text-xl font-semibold text-slate-900">Booking details</h2><p class="mt-1 text-slate-600">Choose the date and time you would prefer to visit PTRI. Fields marked with <span class="font-semibold text-rose-600">*</span> are required.</p></div>
                     <form id="booking-details" class="mt-8 flex flex-1 flex-col" @submit.prevent="validateBooking">
                         <div class="grid gap-5 sm:grid-cols-2"><label><span class="text-sm font-medium text-slate-700">Preferred date</span><input v-model="form.appointment_date" type="date" :aria-invalid="Boolean(bookingErrors.appointment_date)" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" :class="bookingErrors.appointment_date ? 'border-rose-500 ring-2 ring-rose-100' : ''" /><p v-if="bookingErrors.appointment_date" class="mt-1 text-sm text-rose-600">{{ bookingErrors.appointment_date[0] }}</p></label><label><span class="text-sm font-medium text-slate-700">Preferred time</span><input v-model="form.appointment_time" type="time" :aria-invalid="Boolean(bookingErrors.appointment_time)" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" :class="bookingErrors.appointment_time ? 'border-rose-500 ring-2 ring-rose-100' : ''" /><p v-if="bookingErrors.appointment_time" class="mt-1 text-sm text-rose-600">{{ bookingErrors.appointment_time[0] }}</p></label></div>
                         <div class="mt-auto flex items-center justify-between gap-3 pt-8"><a href="/" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Go back</a><button type="submit" :disabled="isValidatingBooking" class="inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc] disabled:cursor-not-allowed disabled:bg-slate-400">{{ isValidatingBooking ? 'Validating…' : 'Next' }}<i v-if="!isValidatingBooking" class="fa-solid fa-arrow-right" aria-hidden="true"></i></button></div>
@@ -449,8 +452,8 @@ export default defineComponent({
                     <form v-if="form.email" id="client-details" class="mt-8 border-t border-slate-200 pt-8" @submit.prevent="validateDetails">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <h2 class="text-xl font-semibold text-slate-900">Client information</h2>
-                                <p class="mt-1 text-slate-600">{{ returningClient ? 'Review and update your details if needed.' : 'Complete all fields to continue.' }}</p>
+                            <h2 class="text-xl font-semibold text-slate-900">Client information</h2>
+                                <p class="mt-1 text-slate-600">{{ returningClient ? 'Review and update your details if needed.' : 'Complete all fields to continue.' }} Fields marked with <span class="font-semibold text-rose-600">*</span> are required.</p>
                             </div>
                             <span class="rounded-full px-3 py-1 text-sm font-semibold" :class="returningClient ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'">{{ returningClient ? 'Returning client' : 'New client' }}</span>
                         </div>

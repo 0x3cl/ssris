@@ -67,7 +67,6 @@ class AccountService
             'name' => [$presence, 'required', 'string', 'max:255'],
             'email' => [$presence, 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
             'password' => [$presence, 'required', 'string', 'min:8', 'max:72'],
-            'account_type' => [$presence, 'required', 'string', 'max:255'],
             'account_status' => [$presence, 'required', 'string', 'max:255'],
         ])->validate();
     }
