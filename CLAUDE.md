@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
@@ -157,3 +161,49 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run `vendor/bin/phpunit` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 </laravel-boost-guidelines>
+
+## Project overview
+
+SRRIS (Service Requests Information System) is a Laravel + Inertia app for PTRI: the public site lets visitors submit **walk-in** and **appointment** service requests, and an authenticated admin side (role-gated via Spatie Permission) manages those requests, users, roles, and SMTP configuration.
+
+## Commands
+
+```bash
+composer install && npm install   # install deps
+php artisan migrate               # apply schema
+composer run dev                  # run Laravel + queue + Vite together (artisan dev)
+npm run build                     # production frontend assets
+```
+
+Tests (PHPUnit, no Pest):
+```bash
+php artisan test --compact tests/Feature/WalkInControllerTest.php   # one file
+php artisan test --compact --filter=testName                        # one test
+vendor/bin/pint --dirty --format agent                               # format PHP after edits
+```
+
+## Architecture
+
+### Two parallel public request flows, one shared backend shape
+
+`WalkInController` and `AppointmentController` (`app/Http/Controllers`) are structured identically: an `index` page, a `findClient` email lookup, a `validateDetails` step-validation endpoint, and a `store`. Appointment additionally has `validateBooking` for the date/time step. Both write to the same `clients` and `service_requests` tables in one transaction — `is_appointment` plus `appointment_date`/`appointment_time` are the only persisted differences. See `docs/service-request-flows.md` and the `service-request-flows` skill before touching either flow; changes to shared behavior (client lookup-by-email, `fullname` derivation, terms confirmation, `FeedbackModal`) must stay in sync across both.
+
+### Enums are the single source of truth for classification values
+
+`app/Enums/*` (`ClientType`, `ClientService`, `ClientSource`, `ClientBusinessRole`, `ClientEnterpriseSize`, `ClientMarket`) back both `Rule::enum()` validation in Form Requests/`ClientService` and the option lists rendered in the Vue forms. Never hardcode these values in a controller or component — add/edit the enum case (with its `label()`) instead.
+
+### Admin CRUD goes through a Service class, not directly through the controller
+
+`App\Services\ClientService` and `App\Services\AccountService` own pagination, find/create/update/delete, and validation for `Client` and `User` respectively; `Admin\ServiceRequestController` and `Admin\AdminManagementController` call into these rather than validating/persisting inline. Follow this pattern for new admin-managed resources.
+
+### Admin routes are role-gated and module pages are dynamic
+
+Everything under `Route::prefix('admin')` (see `routes/web.php`) except login requires `auth` + `role:superadmin` (Spatie). Simple admin pages that don't need a dedicated controller are served by `AdminModuleController@show`, which maps a `{module}` route segment to an Inertia page (`admin/module`) from a fixed allow-list — add new lightweight admin pages there rather than wiring a bespoke controller.
+
+### Frontend: Vue components are plain `.js` files, not `.vue` SFCs
+
+Every file in `resources/js/pages` and `resources/js/components` is `defineComponent({ template: \`...\` })` in a `.js` file — there are no `.vue` files in this project. `vite.config.js` aliases `vue` to the runtime+compiler build specifically to support compiling these inline template strings; don't "fix" that alias or introduce `.vue` SFCs without checking with the user first, since the whole codebase depends on the current setup. Inertia page resolution in `resources/js/app.js` globs `./pages/**/*.js` accordingly.
+
+### Migrated-but-unused modules
+
+Migrations exist for `rdd_requests`, `tsd_requests`, `lab_requests`, `tour_requests`, and activity/visitor logging, but there are no corresponding models/controllers yet — treat these as scaffolding for future modules, not dead code to remove.

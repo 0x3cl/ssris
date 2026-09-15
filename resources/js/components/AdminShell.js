@@ -14,8 +14,8 @@ export default defineComponent({
             if (!message) return;
             feedback.value = { message, open: true, title, tone };
         };
-        watch(() => page.props.flash?.success, (message) => showFeedback('Saved successfully', message, 'success'));
-        watch(() => page.props.flash?.error, (message) => showFeedback('Something went wrong', message, 'error'));
+        watch(() => page.props.flash?.success, (message) => showFeedback('Saved successfully', message, 'success'), { immediate: true });
+        watch(() => page.props.flash?.error, (message) => showFeedback('Something went wrong', message, 'error'), { immediate: true });
         watch(() => page.props.errors, (errors) => {
             const message = Object.values(errors ?? {}).flat()[0];
             if (typeof message === 'string') showFeedback('Please review the form', message, 'error');
@@ -26,6 +26,7 @@ export default defineComponent({
             { key: 'reports', label: 'Reports', href: '/admin/reports', icon: 'fa-solid fa-chart-column' },
             { key: 'users', label: 'Users', href: '/admin/users', icon: 'fa-solid fa-users' },
             { key: 'roles-and-permissions', label: 'Roles and permissions', href: '/admin/roles-and-permissions', icon: 'fa-solid fa-user-shield' },
+            { key: 'form-templates', label: 'Form templates', href: '/admin/form-templates', icon: 'fa-solid fa-file-lines' },
             { key: 'smtp-configuration', label: 'SMTP configuration', href: '/admin/smtp-configuration', icon: 'fa-solid fa-envelope' },
             { key: 'my-account', label: 'My account', href: '/admin/my-account', icon: 'fa-solid fa-circle-user' },
         ];

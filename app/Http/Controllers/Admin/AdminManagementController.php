@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\ClientService;
+use App\Enums\ServiceRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceRequest;
 use App\Models\SmtpSetting;
@@ -21,14 +22,14 @@ use Spatie\Permission\Models\Role;
 
 class AdminManagementController extends Controller
 {
-    private const MODULES = ['dashboard', 'requests', 'reports', 'users', 'roles-and-permissions', 'smtp-configuration'];
+    private const MODULES = ['dashboard', 'requests', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'smtp-configuration'];
 
     public function dashboard(Request $request): Response
     {
         $data = $request->validate(['month' => ['nullable', 'date_format:Y-m']]);
         $selectedMonth = CarbonImmutable::createFromFormat('Y-m', $data['month'] ?? now()->format('Y-m'))->startOfMonth();
         $monthlyRequests = ServiceRequest::query()->whereBetween('created_at', [$selectedMonth, $selectedMonth->endOfMonth()]);
-        $statuses = ['pending', 'on-going', 'payment', 'completed', 'cancelled'];
+        $statuses = ServiceRequestStatus::cases();
         $statusTotals = (clone $monthlyRequests)
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
@@ -47,9 +48,9 @@ class AdminManagementController extends Controller
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get(),
-            'statusBreakdown' => collect($statuses)->map(fn (string $status): array => [
-                'label' => ucfirst($status),
-                'total' => $statusTotals->get($status, 0),
+            'statusBreakdown' => collect($statuses)->map(fn (ServiceRequestStatus $status): array => [
+                'label' => $status->label(),
+                'total' => $statusTotals->get($status->value, 0),
             ]),
             'serviceBreakdown' => (clone $monthlyRequests)
                 ->selectRaw('service, COUNT(*) as total')

@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\FormTemplateController;
+use App\Http\Controllers\Admin\RddRequestController;
 use App\Http\Controllers\Admin\ServiceRequestController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\HomeController;
@@ -36,6 +38,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', fn () => to_route('dashboard'))->name('dashboard');
         Route::post('delete-challenge', [AdminManagementController::class, 'deleteChallenge'])->name('delete-challenge');
         Route::get('requests', [ServiceRequestController::class, 'index'])->name('requests.index');
+        Route::patch('requests/{serviceRequest}/proceed', [ServiceRequestController::class, 'proceed'])->name('requests.proceed');
+        Route::get('requests/{serviceRequest}/rdd-request', [RddRequestController::class, 'create'])->name('requests.rdd.create');
+        Route::post('requests/{serviceRequest}/rdd-request', [RddRequestController::class, 'store'])->name('requests.rdd.store');
+        Route::get('requests/{serviceRequest}/rdd-request/pdf', [RddRequestController::class, 'downloadPdf'])->name('requests.rdd.pdf');
+        Route::get('requests/{serviceRequest}/rdd-request/payment', [RddRequestController::class, 'editPayment'])->name('requests.rdd.payment.edit');
+        Route::post('requests/{serviceRequest}/rdd-request/payment', [RddRequestController::class, 'updatePayment'])->name('requests.rdd.payment.update');
+        Route::get('requests/{serviceRequest}/rdd-request/feedback', [RddRequestController::class, 'editFeedback'])->name('requests.rdd.feedback.edit');
+        Route::post('requests/{serviceRequest}/rdd-request/feedback/remind', [RddRequestController::class, 'sendFeedbackReminder'])->name('requests.rdd.feedback.remind');
         Route::get('roles-and-permissions', [AdminManagementController::class, 'roles'])->name('roles');
         Route::get('roles-and-permissions/create', [AdminManagementController::class, 'createRole'])->name('roles.create');
         Route::get('roles-and-permissions/{role}/edit', [AdminManagementController::class, 'editRole'])->name('roles.edit');
@@ -48,6 +58,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('users', [AdminManagementController::class, 'saveUser'])->name('users.store');
         Route::put('users/{user}', [AdminManagementController::class, 'saveUser'])->name('users.update');
         Route::delete('users/{user}', [AdminManagementController::class, 'deleteUser'])->name('users.destroy');
+        Route::get('form-templates', [FormTemplateController::class, 'index'])->name('form-templates.index');
+        Route::get('form-templates/{formTemplate}/edit', [FormTemplateController::class, 'edit'])->name('form-templates.edit');
+        Route::put('form-templates/{formTemplate}', [FormTemplateController::class, 'update'])->name('form-templates.update');
         Route::get('smtp-configuration', [AdminManagementController::class, 'smtp'])->name('smtp');
         Route::put('smtp-configuration', [AdminManagementController::class, 'saveSmtp'])->name('smtp.update');
         Route::get('my-account', [AdminManagementController::class, 'account'])->name('account');

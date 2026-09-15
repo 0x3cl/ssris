@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ServiceRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,19 +41,33 @@ class ServiceRequestController extends Controller
             ->through(fn (ServiceRequest $serviceRequest): array => [
                 'id' => $serviceRequest->id,
                 'service' => $serviceRequest->service->label(),
+                'service_value' => $serviceRequest->service->value,
                 'type' => $serviceRequest->is_appointment ? 'appointment' : 'walk-in',
-                'status' => $serviceRequest->status,
+                'status' => $serviceRequest->status->label(),
+                'status_value' => $serviceRequest->status->value,
                 'appointment_date' => $serviceRequest->appointment_date?->toDateString(),
                 'appointment_time' => $serviceRequest->appointment_time,
                 'description' => $serviceRequest->description,
-                'created_at' => $serviceRequest->created_at->toDateTimeString(),
+                'created_at' => $serviceRequest->created_at->format('F, d Y H:i:s'),
                 'client' => $serviceRequest->client,
             ]);
 
         return Inertia::render('admin/requests', [
             'filters' => compact('entries', 'search', 'status', 'type'),
             'requests' => $requests,
-            'statuses' => ['pending', 'on-going', 'payment', 'completed', 'cancelled'],
+            'statuses' => array_map(
+                fn (ServiceRequestStatus $status): array => ['value' => $status->value, 'label' => $status->label()],
+                ServiceRequestStatus::cases(),
+            ),
         ]);
+    }
+
+    public function proceed(ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->status === ServiceRequestStatus::Pending, 422, 'Only pending requests can proceed.');
+
+        $serviceRequest->update(['status' => ServiceRequestStatus::ForPayment]);
+
+        return back()->with('success', 'The request has moved to for payment.');
     }
 }

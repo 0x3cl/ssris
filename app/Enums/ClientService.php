@@ -4,22 +4,22 @@ namespace App\Enums;
 
 enum ClientService: string
 {
-    case RddServices = 'rdd-services';
-    case TsdLabServices = 'tsd-lab-services';
-    case TsdIcytProcessingServices = 'tsd-icyt-processing-services';
-    case TipsTrainingServices = 'tips-training-services';
-    case TipsPlantTourServices = 'tips-plant-tour-services';
-    case PictsLibraryRegistration = 'picts-library-registration';
+    case RddServices = 'rnd-services';
+    case LabServices = 'lab-services';
+    case ProcessingServices = 'processing-services';
+    case TrainingServices = 'training-services';
+    case PlantTourServices = 'plant-tour-services';
+    case LibraryRegistration = 'library-registration';
 
     public function label(): string
     {
         return match ($this) {
-            self::RddServices => 'RDD Services',
-            self::TsdLabServices => 'TSD Lab Services',
-            self::TsdIcytProcessingServices => 'TSD ICYT Processing Services',
-            self::TipsTrainingServices => 'TIPS Training Services',
-            self::TipsPlantTourServices => 'TIPS Plant Tour Services',
-            self::PictsLibraryRegistration => 'PICTS Library Registration',
+            self::RddServices => 'R&D Services',
+            self::LabServices => 'Lab Services',
+            self::ProcessingServices => 'Processing Services',
+            self::TrainingServices => 'Training Services',
+            self::PlantTourServices => 'Plant Tour Services',
+            self::LibraryRegistration => 'Library Registration',
         };
     }
 }
