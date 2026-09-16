@@ -186,7 +186,7 @@ vendor/bin/pint --dirty --format agent                               # format PH
 
 ### Two parallel public request flows, one shared backend shape
 
-`WalkInController` and `AppointmentController` (`app/Http/Controllers`) are structured identically: an `index` page, a `findClient` email lookup, a `validateDetails` step-validation endpoint, and a `store`. Appointment additionally has `validateBooking` for the date/time step. Both write to the same `clients` and `service_requests` tables in one transaction — `is_appointment` plus `appointment_date`/`appointment_time` are the only persisted differences. See `docs/service-request-flows.md` and the `service-request-flows` skill before touching either flow; changes to shared behavior (client lookup-by-email, `fullname` derivation, terms confirmation, `FeedbackModal`) must stay in sync across both.
+`WalkInController` and `AppointmentController` (`app/Http/Controllers`) are structured identically: an `index` page, a `findClient` email lookup, a `validateDetails` step-validation endpoint, and a `store`. Appointment additionally has `validateBooking` for the date/time step. Both write to the same `clients` and `service_requests` tables in one transaction — `is_appointment` plus `appointment_date`/`appointment_time` are the only persisted differences. `ServiceRequest::booted()` automatically writes the first activity-log entry ("submitted"/"scheduled") on `created`, so `store()` in both controllers must not also log that event manually — it would duplicate the entry. See `docs/service-request-flows.md` and the `service-request-flows` skill before touching either flow; changes to shared behavior (client lookup-by-email, `fullname` derivation, terms confirmation, `FeedbackModal`) must stay in sync across both.
 
 ### Enums are the single source of truth for classification values
 
@@ -194,20 +194,46 @@ vendor/bin/pint --dirty --format agent                               # format PH
 
 ### Admin CRUD goes through a Service class, not directly through the controller
 
-`App\Services\ClientService` and `App\Services\AccountService` own pagination, find/create/update/delete, and validation for `Client` and `User` respectively; `Admin\ServiceRequestController` and `Admin\AdminManagementController` call into these rather than validating/persisting inline. Follow this pattern for new admin-managed resources.
+`App\Services\ClientService` owns pagination, find/create/update/delete, and validation for `Client`; `Admin\ClientController` calls into it rather than validating/persisting inline. Follow this pattern for new admin-managed resources. Note: `App\Services\AccountService` exists for the same purpose on `User` but `Admin\AdminManagementController::saveUser()` currently validates and persists inline instead (including `username`, `role`, `profile_image`, and the `services` sync below) — this is known drift from the intended pattern, not a model to copy for new resources.
+
+### Per-user service scoping restricts which requests an admin can see
+
+The `users_services` pivot table (`App\Models\UserService`, `User::services(): HasMany`) assigns each admin user zero or more `App\Enums\ClientService` values. `Admin\ServiceRequestController::index()` filters the requests list to `whereIn('service', $assignedServices)` — an admin with no assigned services sees zero requests. The user form's "Choose services" button opens `ServiceSelectModal` (a multi-select grid of illustrated `ServiceCard`s, reusing `resources/js/utils/service-illustrations.js`) to manage this per user. `database/seeders/AdminUserSeeder.php` assigns all `ClientService` cases to the `iamcarlllemos@gmail.com` superadmin account so it isn't scoped out of any requests — keep that seeder in sync if `ClientService` gains new cases.
 
 ### Admin routes are role-gated and module pages are dynamic
 
 Everything under `Route::prefix('admin')` (see `routes/web.php`) except login requires `auth` + `role:superadmin` (Spatie). Simple admin pages that don't need a dedicated controller are served by `AdminModuleController@show`, which maps a `{module}` route segment to an Inertia page (`admin/module`) from a fixed allow-list — add new lightweight admin pages there rather than wiring a bespoke controller.
 
+### Account safety: no self-delete, no deleting the superadmin role
+
+`AdminManagementController::deleteUser()` and `::deleteRole()` both `abort_if(...)` server-side (you can't delete your own account; the `superadmin` role can never be deleted) — keep both checks if either method is refactored. The frontend hides the corresponding button in `resources/js/pages/admin/users.js`/`roles.js` using the same conditions, which depends on the logged-in user's id being available as `$page.props.auth.user.id`. That prop is shared explicitly in `app/Http/Middleware/HandleInertiaRequests.php::share()` — it is **not** part of Inertia's or Laravel's defaults, so any new page relying on `$page.props.auth` must confirm it's still shared there rather than assuming it exists.
+
 ### Frontend: Vue components are plain `.js` files, not `.vue` SFCs
 
 Every file in `resources/js/pages` and `resources/js/components` is `defineComponent({ template: \`...\` })` in a `.js` file — there are no `.vue` files in this project. `vite.config.js` aliases `vue` to the runtime+compiler build specifically to support compiling these inline template strings; don't "fix" that alias or introduce `.vue` SFCs without checking with the user first, since the whole codebase depends on the current setup. Inertia page resolution in `resources/js/app.js` globs `./pages/**/*.js` accordingly.
+
+AOS (`aos` npm package) drives scroll/reveal animation (`data-aos="fade-up"`/`"fade-right"`, `AOS.init()` in `onMounted`). When a page reveals `data-aos` elements that were loaded asynchronously (e.g. services fetched from the DB), don't call `AOS.init()` before that content exists — show a loading state first, then flip to the real content and call `AOS.refreshHard()` in `nextTick()` so AOS picks up the newly-rendered elements (see `walk-in.js`/`appointment.js`'s `isLoadingServices`/`revealServices()`).
 
 ### R&D admin workflow
 
 `Admin\RddRequestController` drives the R&D service-request lifecycle end to end: create the request form (`pending` → `for_payment`), verify OP/OR payment details with optional proof attachments (`for_payment` → `awaiting_feedback`), then send/generate feedback links (`awaiting_feedback` → `completed`). Each stage's redirect and the requests-list action links append a `?tab=` query parameter so the admin lands on the next relevant tab (see `useQueryTab` in `resources/js/utils/query-tab.js`); a completed request stays reachable read-only through a "More Info" action on the same feedback page. Payment and feedback reminder emails render seeded `FormTemplate` rows through `FormTemplateMailer`, and any link included in a template body must be a real `FeedbackLinkService`-generated URL, not a hardcoded placeholder. See `docs/admin-operations.md` and the `admin-service-operations` skill before changing this flow.
 
+### Lab, Processing, and Training (TSD) request workflows
+
+`Admin\LabRequestController`, `Admin\ProcessingRequestController`, and `Admin\TrainingRequestController` each drive their own service's request/payment lifecycle, mirroring the R&D workflow's shape. Each has a matching native-TCPDF download service (`LabPdfService`, `ProcessingPdfService`, `TrainingServiceRequestPdfService`, `TrainingServiceFeePdfService`) — see "PDF generation" below.
+
+### PDF generation uses native TCPDF drawing with a shared footer
+
+Every generated PDF (`FeedbackPdfService`, `RddPdfService`, `LabPdfService`, `ProcessingPdfService`, `TrainingServiceRequestPdfService`, `TrainingServiceFeePdfService`) instantiates `App\Services\NumberedPdf` (a `TCPDF` subclass) instead of `TCPDF` directly, with `setPrintFooter(true)`, to get an automatic centered "Page X of Y" footer on every page, including pages added mid-render via `AddPage()`. When a service computes its own page-break threshold (deciding whether content still fits before drawing more), it must reserve enough bottom margin to clear the footer's reserved zone (roughly the last 40pt of the page) — don't let a table's last row or a page's last field land closer than ~15pt from the page bottom, or it will visually overlap the footer text. `FeedbackPdfService` renders **portrait** (not landscape) to match the physical "TSD Form No. 008" form; its rating-table column widths are percentages of the page width (15% dimension / 28% description / remainder split across rating columns) matching the same ratios used by the web preview page (`resources/js/pages/admin/feedback-visualization.js`) — keep both in sync when adjusting one.
+
+### Audit trail
+
+`owen-it/laravel-auditing` is installed; `User` (and other audited models) use the `Auditable` trait/contract. The "Audit Trails" admin module (`Admin\AuditTrailController`, module key `audit-trails`) lists `OwenIt\Auditing\Models\Audit` rows with the acting user and before/after values, and is excluded from the visitor-capture middleware. Login and logout are logged explicitly (not automatically covered by the package) with the acting user attached. `audit-trails` is a **read-only** module in the roles/permissions system (`AdminManagementController::READ_ONLY_MODULES`) — it only ever grants a `.read` permission, never `.write`; `saveRole()` strips any `write` permission submitted for a read-only module server-side, so don't add a write toggle for it in the roles UI.
+
+### PSGC-backed address cascade
+
+`App\Services\PsgcClient` proxies the public PSGC API (`psgc.gitlab.io/api`), caching non-empty responses, and normalizes municipality names (`"City of Manila"` → `"Manila City"`). `App\Http\Controllers\AddressController` exposes this as three public JSON endpoints (`address/regions`, `address/regions/{region}/provinces`, `address/provinces/{province}/municipalities`) used by the walk-in and appointment forms' cascading Region → Province → Municipality `<select>` elements (`regionCode`/`provinceCode`/`municipalityCode` refs, with `hydrateAddressCascade()` resolving a returning client's stored address strings back to PSGC codes). Don't hardcode region/province/municipality option lists — always resolve them through this API.
+
 ### Migrated-but-unused modules
 
-Migrations exist for `tsd_requests`, `lab_requests`, `tour_requests`, and activity/visitor logging, but there are no corresponding models/controllers yet — treat these as scaffolding for future modules, not dead code to remove. (`rdd_requests` is now fully implemented — see the R&D admin workflow above.)
+Migrations exist for `tour_requests` and `activity_logs`, but there are no corresponding models/controllers yet — treat these as scaffolding for future modules, not dead code to remove. (`rdd_requests`, `lab_requests`, `processing_requests`, and `training_requests`/`training_request_fees` are all now fully implemented — see the workflow sections above.)

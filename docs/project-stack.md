@@ -11,6 +11,9 @@
 | Build tool | Vite 8 with Laravel Vite plugin |
 | Database access | Laravel Eloquent and query builder |
 | Roles and permissions | Spatie Laravel Permission 8 |
+| Audit trail | `owen-it/laravel-auditing` |
+| Scroll/reveal animation | AOS (`aos` npm package) |
+| Address data | PSGC (Philippine Standard Geographic Code) public API, proxied and cached server-side |
 | Analytics | Chart.js 4 |
 | PDF generation | TCPDF 6.11 |
 | Tests | PHPUnit 12 |
@@ -23,7 +26,7 @@
 | `app/Enums` | Values shared by backend validation and frontend option lists. |
 | `app/Http/Controllers` | Inertia page data, request endpoints, administration, and persistence orchestration. |
 | `app/Http/Requests` | Server-side validation for final request submission. |
-| `app/Models` | Eloquent records such as `Client`. |
+| `app/Models` | Eloquent records: `Client`, `ServiceRequest` and its per-service detail tables (`RddRequest`, `LabRequest`, `ProcessingRequest`, `TrainingRequest`), feedback builder models, `User`, and `UserService` (the per-user assigned-services pivot). |
 | `app/Services` | Reusable domain operations, including client persistence, feedback links, and native TCPDF layouts. |
 | `database/migrations` | Database schema for clients, requests, feedback, and administration. |
 | `resources/js/components` | Reusable Vue UI pieces, modals, and steppers. |

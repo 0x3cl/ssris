@@ -174,17 +174,26 @@ class AdminManagementController extends Controller
 
     public function createUser(): Response
     {
-        return Inertia::render('admin/user-form', ['roles' => $this->rolesForSelection(), 'user' => null]);
+        return Inertia::render('admin/user-form', ['roles' => $this->rolesForSelection(), 'serviceOptions' => $this->serviceOptions(), 'user' => null]);
     }
 
     public function editUser(User $user): Response
     {
-        return Inertia::render('admin/user-form', ['roles' => $this->rolesForSelection(), 'user' => $user->load('roles:id,name')]);
+        $user->load('roles:id,name', 'services:id,user_id,service');
+
+        return Inertia::render('admin/user-form', [
+            'roles' => $this->rolesForSelection(),
+            'serviceOptions' => $this->serviceOptions(),
+            'user' => [
+                ...$user->toArray(),
+                'services' => $user->services->pluck('service')->map(fn (ClientService $service) => $service->value),
+            ],
+        ]);
     }
 
     public function saveUser(Request $request, ?User $user = null): RedirectResponse
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'username' => ['required', 'string', 'max:100', Rule::unique('users', 'username')->ignore($user)], 'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)], 'account_status' => ['required', Rule::in(['active', 'inactive'])], 'role' => ['required', 'exists:roles,name'], 'password' => [$user ? 'nullable' : 'required', 'string', 'min:8'], 'profile_image' => ['nullable', 'image', 'max:2048']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'username' => ['required', 'string', 'max:100', Rule::unique('users', 'username')->ignore($user)], 'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)], 'account_status' => ['required', Rule::in(['active', 'inactive'])], 'role' => ['required', 'exists:roles,name'], 'password' => [$user ? 'nullable' : 'required', 'string', 'min:8'], 'profile_image' => ['nullable', 'image', 'max:2048'], 'services' => ['array'], 'services.*' => [Rule::enum(ClientService::class)]]);
         $user ??= new User;
         if ($request->hasFile('profile_image')) {
             $data['profile_image'] = $request->file('profile_image')->store('profiles', 'public');
@@ -192,9 +201,13 @@ class AdminManagementController extends Controller
         if (empty($data['password'])) {
             unset($data['password']);
         }
+        $services = $data['services'] ?? [];
+        unset($data['services']);
         $data['role_type'] = $data['role'];
         $user->fill($data)->save();
         $user->syncRoles([$data['role']]);
+        $user->services()->delete();
+        $user->services()->createMany(array_map(fn (string $service): array => ['service' => $service], $services));
 
         return to_route('admin.users')->with('success', 'User saved.');
     }
@@ -329,6 +342,15 @@ class AdminManagementController extends Controller
     private function rolesForSelection(): Collection
     {
         return Role::query()->orderBy('name')->get(['id', 'name']);
+    }
+
+    /** @return array<int, array{value: string, label: string}> */
+    private function serviceOptions(): array
+    {
+        return array_map(
+            fn (ClientService $service): array => ['value' => $service->value, 'label' => $service->label()],
+            ClientService::cases(),
+        );
     }
 
     private function validateDeleteChallenge(Request $request): void

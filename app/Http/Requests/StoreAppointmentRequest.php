@@ -32,7 +32,7 @@ class StoreAppointmentRequest extends FormRequest
             'email' => ['required', 'email', 'max:255'],
             'mobile_no' => ['required', 'string', 'max:30'],
             'fax_no' => ['nullable', 'string', 'max:30'],
-            'age' => ['required', 'integer', 'between:0,120'],
+            'age' => ['required', 'integer', 'between:6,80'],
             'gender' => ['required', Rule::in(['male', 'female', 'prefer-not-to-say'])],
             'address' => ['required', 'string', 'max:1000'],
             'region' => ['required', 'string', 'max:255'],

@@ -49,6 +49,10 @@ class FeedbackController extends Controller
                 'company_or_school' => $client->company ?? $client->school_name,
                 'type_client' => $client->type_client->label(),
                 'service' => $serviceRequest->service->label(),
+                'age' => $client->age,
+                'age_bracket' => $this->ageBracket($client->age),
+                'gender' => $client->gender,
+                'reference_no' => 'SR-'.str_pad((string) $serviceRequest->id, 6, '0', STR_PAD_LEFT),
             ],
             'dimensions' => $snapshot['dimensions'],
             'ratings' => $snapshot['ratings'],
@@ -132,6 +136,18 @@ class FeedbackController extends Controller
             'ratings' => FeedbackRating::query()->orderBy('id')->get(['id', 'name', 'value'])->toArray(),
             'questions' => FeedbackQuestion::query()->orderBy('id')->get(['id', 'name'])->toArray(),
         ];
+    }
+
+    private function ageBracket(?int $age): ?string
+    {
+        return match (true) {
+            $age === null => null,
+            $age <= 20 => 'less than 20 yrs old',
+            $age <= 30 => '21-30 yrs old',
+            $age <= 50 => '31-50 yrs old',
+            $age <= 59 => '51-59 yrs old',
+            default => '60 yrs old and above',
+        };
     }
 
     private function unavailable(?FeedbackLink $link): Response

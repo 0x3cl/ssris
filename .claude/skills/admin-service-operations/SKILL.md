@@ -13,6 +13,9 @@ Use this skill for work under `/admin`, request processing, feedback management,
 - Reuse `AdminShell`, index controls, pagination, confirmation dialogs, and feedback modals before making page-specific alternatives.
 - Admin lists fetch a filtered, paginated server result. Preserve search, entries, and status or role filters when extending an index.
 - Keep reusable browser behavior in `resources/js/utils`. Use `useQueryTab` when an admin workflow tab must survive reloads and shared URLs.
+- `Admin\ServiceRequestController::index()` filters the requests list to the logged-in admin's assigned services (`users_services` pivot, `User::services()`) — an admin with no services assigned sees zero requests. Manage assignment through the user form's "Choose services" modal (`ServiceSelectModal`, reusing `ServiceCard` and `resources/js/utils/service-illustrations.js`). Keep this filter in mind before assuming a request list is unscoped.
+- A user can never delete their own account, and the `superadmin` role can never be deleted — both are enforced with `abort_if(...)` in `AdminManagementController::deleteUser()`/`::deleteRole()`. The Vue list pages hide the corresponding button using `$page.props.auth.user.id`, which is only available because it's explicitly shared in `HandleInertiaRequests::share()` — it is not an Inertia/Laravel default. If you rely on `$page.props.auth` on a new page, confirm it's still shared there.
+- The "Audit Trails" module (`Admin\AuditTrailController`) is a **read-only** entry in `AdminManagementController::READ_ONLY_MODULES` — never add a write permission toggle for it. Login/logout are logged explicitly (the `owen-it/laravel-auditing` package doesn't cover them automatically) with the acting user attached.
 
 ## R&D and feedback workflow
 
@@ -27,6 +30,7 @@ Use this skill for work under `/admin`, request processing, feedback management,
 
 - Use TCPDF for PDFs. Do not use DOMPDF or browser `window.print()` for generated documents.
 - Use `FeedbackPdfService` as the model for structured, native TCPDF drawing when visual fidelity matters. Draw bounded sections explicitly and move unsplittable blocks to a new page when they do not fit.
-- Keep the generated feedback PDF landscape so rating columns remain readable without scrolling or compression.
+- Every PDF service instantiates `App\Services\NumberedPdf` (a `TCPDF` subclass with `setPrintFooter(true)`) instead of `TCPDF` directly, so every page automatically gets a centered "Page X of Y" footer, including pages added mid-render. When computing a page-break threshold, reserve enough bottom margin (~40pt) to clear that footer — don't let a table's last row or the final field land within it.
+- The feedback PDF (`FeedbackPdfService`) is **portrait**, matching the physical "TSD Form No. 008" form — do not revert it to landscape. Its rating-table column widths are percentages of the page width (15% dimension / 28% description / remainder split across rating columns), matching the ratios used by the web preview at `resources/js/pages/admin/feedback-visualization.js`; keep both in sync when adjusting either.
 
 Read [Admin Operations](../../../docs/admin-operations.md) for module responsibilities, route behavior, and the PDF rendering details.

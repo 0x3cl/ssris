@@ -15,6 +15,7 @@ use App\Models\LabRequestItem;
 use App\Models\ServiceRequest;
 use App\Models\ServiceRequestLog;
 use App\Services\FeedbackLinkService;
+use App\Services\FeedbackPdfService;
 use App\Services\FormTemplateMailer;
 use App\Services\LabPdfService;
 use App\Services\ServiceRequestLogger;
@@ -333,13 +334,64 @@ class LabRequestController extends Controller
         $snapshot = $response->snapshot ?? ['dimensions' => [], 'ratings' => [], 'questions' => []];
 
         return Inertia::render('admin/feedback-response', [
-            'client' => [...$this->clientPayload($serviceRequest->client), 'service' => $serviceRequest->service->label()],
+            'client' => [
+                ...$this->clientPayload($serviceRequest->client),
+                'service' => $serviceRequest->service->label(),
+                'reference_no' => 'SR-'.str_pad((string) $serviceRequest->id, 6, '0', STR_PAD_LEFT),
+            ],
             'submittedAt' => $response->created_at->format('F j, Y g:i A'),
             'dimensions' => $snapshot['dimensions'],
             'ratings' => $snapshot['ratings'],
             'questions' => $snapshot['questions'],
             'responseRatings' => $response->ratings,
             'responseAnswers' => $response->answers,
+            'pdfUrl' => route('admin.requests.lab.feedback.response.pdf', [$serviceRequest, $feedbackLink]),
+        ]);
+    }
+
+    public function downloadFeedbackResponsePdf(ServiceRequest $serviceRequest, FeedbackLink $feedbackLink): HttpResponse|RedirectResponse
+    {
+        if ($serviceRequest->service !== ClientService::LabServices) {
+            return to_route('admin.requests.index')->with('error', 'This request cannot be handled as a lab services request.');
+        }
+
+        abort_unless($feedbackLink->service_request_id === $serviceRequest->id, 404);
+
+        $feedbackLink->load('response');
+        $response = $feedbackLink->response;
+
+        if ($response === null) {
+            return back()->with('error', 'No response has been submitted for this link yet.');
+        }
+
+        $serviceRequest->load('client');
+        $snapshot = $response->snapshot ?? ['dimensions' => [], 'ratings' => [], 'questions' => []];
+        $client = $this->clientPayload($serviceRequest->client);
+
+        $document = app(FeedbackPdfService::class)->render(
+            $snapshot['dimensions'],
+            $snapshot['questions'],
+            $snapshot['ratings'],
+            [
+                ...$client,
+                'reference_no' => 'SR-'.str_pad((string) $serviceRequest->id, 6, '0', STR_PAD_LEFT),
+                'date' => $response->created_at->format('F j, Y'),
+                'age_bracket' => match (true) {
+                    ($client['age'] ?? null) === null => null,
+                    $client['age'] <= 20 => 'less than 20 yrs old',
+                    $client['age'] <= 30 => '21-30 yrs old',
+                    $client['age'] <= 50 => '31-50 yrs old',
+                    $client['age'] <= 59 => '51-59 yrs old',
+                    default => '60 yrs old and above',
+                },
+            ],
+            $response->ratings,
+            $response->answers,
+        );
+
+        return response($document, 200, [
+            'Content-Disposition' => "attachment; filename=\"feedback-response-{$serviceRequest->id}.pdf\"",
+            'Content-Type' => 'application/pdf',
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ClientService;
 use App\Http\Controllers\Admin\AdminManagementController;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -32,5 +33,10 @@ class AdminUserSeeder extends Seeder
         );
 
         $user->syncRoles([$role]);
+
+        $user->services()->delete();
+        $user->services()->createMany(
+            array_map(fn (ClientService $service): array => ['service' => $service->value], ClientService::cases()),
+        );
     }
 }

@@ -27,6 +27,14 @@ The submitted `service_requests` row has `is_appointment` set to `true` and stor
 
 The email lookup runs before the client-details step. If an active client with that email exists, the form is prefilled. On submission, the application updates that client record; otherwise, it creates a client record. The full name is derived from the submitted first and last names.
 
+## Address selection
+
+Region, Province, and Municipality are cascading `<select>` fields backed by the public PSGC (Philippine Standard Geographic Code) API, not a static list: selecting a region loads its provinces (or its municipalities directly, for NCR-style regions that have none), and selecting a province loads its municipalities. `App\Services\PsgcClient` proxies and caches the upstream API and normalizes municipality names (e.g. "City of Manila" becomes "Manila City"); `App\Http\Controllers\AddressController` exposes it as public JSON endpoints under `address/...`. A returning client's previously saved address strings are resolved back to PSGC codes to prefill the selects.
+
+## Activity log
+
+Every submitted request automatically gets a first activity-log entry ("Walk-in service request submitted" or "Appointment request submitted for ...") written by a `ServiceRequest` model event on creation — the controllers do not write this entry themselves.
+
 ## Validation and feedback
 
 All request validation is performed by Laravel Form Requests. The frontend sends validation requests before advancing from booking and client-detail steps, then displays errors beside the applicable fields and scrolls to the first error. The email is read-only after lookup and is validated again at final submission.

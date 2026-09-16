@@ -37,7 +37,10 @@ class ServiceRequestController extends Controller
         $date = $request->string('date')->value();
         $search = trim($request->string('search')->value());
 
+        $assignedServices = (Auth::user()?->services ?? collect())->pluck('service')->map(fn (ClientService $service): string => $service->value)->all();
+
         $requests = ServiceRequest::query()
+            ->whereIn('service', $assignedServices)
             ->with(['client:id,firstname,middlename,lastname,fullname,email,mobile_no,type_client'])
             ->when($type === 'walk-in', fn ($query) => $query->where('is_appointment', false))
             ->when($type === 'appointment', fn ($query) => $query->where('is_appointment', true))

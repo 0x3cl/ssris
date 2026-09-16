@@ -13,6 +13,7 @@ import SourceModal from '../components/SourceModal';
 import TermsConditionsModal from '../components/TermsConditionsModal';
 import WalkInStepper from '../components/WalkInStepper';
 import { markRequiredFields } from '../utils/required-fields';
+import { serviceIllustrations } from '../utils/service-illustrations';
 
 const blankClient = (service = '') => ({
     firstname: '',
@@ -41,15 +42,6 @@ const blankClient = (service = '') => ({
     description: '',
     terms_accepted: false,
 });
-
-const serviceIllustrations = {
-    'rnd-services': '/assets/undraw/researching.svg',
-    'lab-services': '/assets/undraw/science.svg',
-    'processing-services': '/assets/undraw/data-processing.svg',
-    'training-services': '/assets/undraw/teaching.svg',
-    'plant-tour-services': '/assets/undraw/watering-plants.svg',
-    'library-registration': '/assets/undraw/bookshelves.svg',
-};
 
 const clientTypeIllustrations = {
     academe: '/assets/undraw/teacher.svg',
@@ -573,16 +565,14 @@ export default defineComponent({
                             </div>
                         </div>
                         <div v-else class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            <ServiceCard
-                                v-for="(service, index) in services"
-                                :key="service.value"
-                                data-aos="fade-up"
-                                :data-aos-delay="index * 75"
-                                :illustration="serviceIllustrations[service.value]"
-                                :selected="selectedService === service.value"
-                                :service="service"
-                                @select="openEmailModal"
-                            />
+                            <div v-for="(service, index) in services" :key="service.value" data-aos="fade-up" :data-aos-delay="index * 75">
+                                <ServiceCard
+                                    :illustration="serviceIllustrations[service.value]"
+                                    :selected="selectedService === service.value"
+                                    :service="service"
+                                    @select="openEmailModal"
+                                />
+                            </div>
                         </div>
                     </section>
                     <section v-else-if="currentStep === 2" class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
@@ -624,7 +614,7 @@ export default defineComponent({
                                         </label>
                                         <label class="md:col-span-2">
                                             <span class="text-sm font-medium text-slate-700">Age</span>
-                                            <input v-model="form.age" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                            <input v-model="form.age" type="number" min="6" max="80" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
                                         </label>
                                         <div class="md:col-span-4">
                                             <span class="text-sm font-medium text-slate-700">Gender</span>

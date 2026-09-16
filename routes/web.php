@@ -74,6 +74,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('requests/{serviceRequest}/rdd-request/feedback/remind', [RddRequestController::class, 'sendFeedbackReminder'])->name('requests.rdd.feedback.remind');
         Route::post('requests/{serviceRequest}/rdd-request/feedback/generate-link', [RddRequestController::class, 'generateFeedbackLink'])->name('requests.rdd.feedback.generate-link');
         Route::get('requests/{serviceRequest}/rdd-request/feedback/responses/{feedbackLink}', [RddRequestController::class, 'viewFeedbackResponse'])->name('requests.rdd.feedback.response');
+        Route::get('requests/{serviceRequest}/rdd-request/feedback/responses/{feedbackLink}/pdf', [RddRequestController::class, 'downloadFeedbackResponsePdf'])->name('requests.rdd.feedback.response.pdf');
         Route::get('requests/{serviceRequest}/processing-request', [ProcessingRequestController::class, 'create'])->name('requests.processing.create');
         Route::post('requests/{serviceRequest}/processing-request', [ProcessingRequestController::class, 'store'])->name('requests.processing.store');
         Route::get('requests/{serviceRequest}/processing-request/attachments/{type}', [ProcessingRequestController::class, 'downloadPaymentAttachment'])->name('requests.processing.attachment');
@@ -85,6 +86,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('requests/{serviceRequest}/processing-request/feedback/remind', [ProcessingRequestController::class, 'sendFeedbackReminder'])->name('requests.processing.feedback.remind');
         Route::post('requests/{serviceRequest}/processing-request/feedback/generate-link', [ProcessingRequestController::class, 'generateFeedbackLink'])->name('requests.processing.feedback.generate-link');
         Route::get('requests/{serviceRequest}/processing-request/feedback/responses/{feedbackLink}', [ProcessingRequestController::class, 'viewFeedbackResponse'])->name('requests.processing.feedback.response');
+        Route::get('requests/{serviceRequest}/processing-request/feedback/responses/{feedbackLink}/pdf', [ProcessingRequestController::class, 'downloadFeedbackResponsePdf'])->name('requests.processing.feedback.response.pdf');
         Route::get('requests/{serviceRequest}/lab-request', [LabRequestController::class, 'create'])->name('requests.lab.create');
         Route::post('requests/{serviceRequest}/lab-request', [LabRequestController::class, 'store'])->name('requests.lab.store');
         Route::get('requests/{serviceRequest}/lab-request/attachments/{type}', [LabRequestController::class, 'downloadPaymentAttachment'])->name('requests.lab.attachment');
@@ -96,6 +98,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('requests/{serviceRequest}/lab-request/feedback/remind', [LabRequestController::class, 'sendFeedbackReminder'])->name('requests.lab.feedback.remind');
         Route::post('requests/{serviceRequest}/lab-request/feedback/generate-link', [LabRequestController::class, 'generateFeedbackLink'])->name('requests.lab.feedback.generate-link');
         Route::get('requests/{serviceRequest}/lab-request/feedback/responses/{feedbackLink}', [LabRequestController::class, 'viewFeedbackResponse'])->name('requests.lab.feedback.response');
+        Route::get('requests/{serviceRequest}/lab-request/feedback/responses/{feedbackLink}/pdf', [LabRequestController::class, 'downloadFeedbackResponsePdf'])->name('requests.lab.feedback.response.pdf');
         Route::get('requests/{serviceRequest}/training-request', [TrainingRequestController::class, 'create'])->name('requests.training.create');
         Route::post('requests/{serviceRequest}/training-request', [TrainingRequestController::class, 'store'])->name('requests.training.store');
         Route::get('requests/{serviceRequest}/training-request/pdf', [TrainingRequestController::class, 'downloadPdf'])->name('requests.training.pdf');
@@ -110,6 +113,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('requests/{serviceRequest}/training-request/feedback/remind', [TrainingRequestController::class, 'sendFeedbackReminder'])->name('requests.training.feedback.remind');
         Route::post('requests/{serviceRequest}/training-request/feedback/generate-link', [TrainingRequestController::class, 'generateFeedbackLink'])->name('requests.training.feedback.generate-link');
         Route::get('requests/{serviceRequest}/training-request/feedback/responses/{feedbackLink}', [TrainingRequestController::class, 'viewFeedbackResponse'])->name('requests.training.feedback.response');
+        Route::get('requests/{serviceRequest}/training-request/feedback/responses/{feedbackLink}/pdf', [TrainingRequestController::class, 'downloadFeedbackResponsePdf'])->name('requests.training.feedback.response.pdf');
         Route::get('roles-and-permissions', [AdminManagementController::class, 'roles'])->name('roles');
         Route::get('roles-and-permissions/create', [AdminManagementController::class, 'createRole'])->name('roles.create');
         Route::get('roles-and-permissions/{role}/edit', [AdminManagementController::class, 'editRole'])->name('roles.edit');

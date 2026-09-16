@@ -166,6 +166,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Inertia.js 3 with Vue 3 JavaScript page components
 - Tailwind CSS 4 and Vite 8
 - MySQL-compatible Laravel database layer, PHPUnit 12, and Laravel Pint
+- `owen-it/laravel-auditing` for the audit trail module; `aos` (npm) for scroll-reveal animation; TCPDF for all generated PDFs
 
 ### Structure and request flows
 
@@ -173,13 +174,18 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Server-side request validation belongs in `app/Http/Requests`; shared client writes are handled by `app/Services/ClientService.php`.
 - Vue pages live in `resources/js/pages` and reusable UI components in `resources/js/components`.
 - Walk-in and appointment requests share email-based client lookup and update-or-create behavior. Use enums for service and client option lists.
-- A walk-in creates a `service_requests` record with `is_appointment = false`. An appointment sets `is_appointment = true` and persists `appointment_date` and `appointment_time`.
+- A walk-in creates a `service_requests` record with `is_appointment = false`. An appointment sets `is_appointment = true` and persists `appointment_date` and `appointment_time`. `ServiceRequest::booted()` writes the first activity-log entry automatically on `created` — don't also log it manually in `store()`.
+- Region/province/municipality address fields are API-driven, not hardcoded: `App\Services\PsgcClient` + `AddressController` proxy the public PSGC API (`address/regions`, `.../provinces`, `.../municipalities`), and the walk-in/appointment forms cascade Region → Province → Municipality against it.
 - Read `docs/service-request-flows.md` and `.claude/skills/service-request-flows/SKILL.md` before making request-flow changes.
 
 ### Admin and R&D request workflow
 
-- `Admin\RddRequestController` drives the R&D lifecycle: create the request form (`pending` → `for_payment`), verify OP/OR payment with optional proof attachments (`for_payment` → `awaiting_feedback`), then send/generate feedback links (`awaiting_feedback` → `completed`). A completed request stays reachable read-only through a "More Info" action on the same feedback page.
+- `Admin\RddRequestController` drives the R&D lifecycle: create the request form (`pending` → `for_payment`), verify OP/OR payment with optional proof attachments (`for_payment` → `awaiting_feedback`), then send/generate feedback links (`awaiting_feedback` → `completed`). A completed request stays reachable read-only through a "More Info" action on the same feedback page. `Admin\LabRequestController`, `Admin\ProcessingRequestController`, and `Admin\TrainingRequestController` mirror this shape for their own services.
 - Tabbed admin pages persist the active tab in a `?tab=` query parameter (`resources/js/utils/query-tab.js`, `useQueryTab`); redirects after each stage's save append the next tab so the admin lands there automatically.
 - Reminder emails render seeded `FormTemplate` rows through `FormTemplateMailer`. Any link placeholder in a template body must be a real `FeedbackLinkService`-generated URL, never a hardcoded or external one.
 - A final, irreversible submit (R&D form submit, payment verification, public feedback submit) confirms first via `ConfirmActionModal` or `CodeConfirmationModal`.
+- Every downloadable PDF (`FeedbackPdfService`, `RddPdfService`, `LabPdfService`, `ProcessingPdfService`, `TrainingServiceRequestPdfService`, `TrainingServiceFeePdfService`) uses `App\Services\NumberedPdf` (a `TCPDF` subclass) for an automatic "Page X of Y" footer; reserve enough bottom margin in page-break math so content never overlaps that footer.
+- The `users_services` pivot (`User::services()`) scopes which requests an admin can see (`Admin\ServiceRequestController::index()` filters to the admin's assigned `ClientService` values). Manage assignment via the "Choose services" modal on the user form. The `iamcarlllemos@gmail.com` seeded superadmin is assigned all services in `AdminUserSeeder`.
+- The "Audit Trails" module is read-only in roles/permissions (`AdminManagementController::READ_ONLY_MODULES`); login/logout are logged explicitly with the acting user.
+- A user can never delete their own account, and the `superadmin` role can never be deleted — both are enforced server-side in `AdminManagementController` and mirrored in the Vue list pages via the explicitly-shared `$page.props.auth.user.id` (see `HandleInertiaRequests`).
 - Read `docs/admin-operations.md` and `.claude/skills/admin-service-operations/SKILL.md` before making admin or R&D workflow changes.
