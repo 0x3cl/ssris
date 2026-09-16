@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Http\Controllers\Admin\AdminManagementController;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -11,8 +12,10 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $permissions = collect(['dashboard', 'clients', 'requests', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'feedback-builder', 'smtp-configuration', 'ulims-configuration'])
-            ->flatMap(fn (string $module) => ["{$module}.read", "{$module}.write"])
+        $permissions = collect(AdminManagementController::MODULES)
+            ->flatMap(fn (string $module) => in_array($module, AdminManagementController::READ_ONLY_MODULES, true)
+                ? ["{$module}.read"]
+                : ["{$module}.read", "{$module}.write"])
             ->map(fn (string $permission) => Permission::findOrCreate($permission));
         $role = Role::findOrCreate('superadmin');
         $role->syncPermissions($permissions);
@@ -21,7 +24,7 @@ class AdminUserSeeder extends Seeder
             ['username' => '826'],
             [
                 'name' => 'Super Administrator',
-                'email' => 'superadmin@ptri.local',
+                'email' => 'iamcarlllemos@gmail.com',
                 'account_status' => 'active',
                 'role_type' => 'superadmin',
                 'password' => 'password@ptri',

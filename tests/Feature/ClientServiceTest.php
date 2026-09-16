@@ -29,12 +29,12 @@ class ClientServiceTest extends TestCase
     {
         $client = Client::factory()->create(['company' => 'Old company']);
 
-        (new ClientService)->update($client->id, ['description' => 'Updated request', 'company' => null]);
+        (new ClientService)->update($client->id, ['address' => 'Updated address', 'company' => null]);
 
         $this->assertDatabaseHas('clients', [
             'id' => $client->id,
             'firstname' => $client->firstname,
-            'description' => 'Updated request',
+            'address' => 'Updated address',
             'company' => null,
         ]);
     }

@@ -92,13 +92,6 @@ class AppointmentController extends Controller
             ]);
         });
 
-        $this->serviceRequestLogger->log(
-            $serviceRequest,
-            ServiceRequestLogAction::Scheduled,
-            "Appointment request submitted by the client for {$data['appointment_date']} {$data['appointment_time']}.",
-            $data['fullname'],
-        );
-
         $emailQueued = $this->sendAcknowledgementEmail($serviceRequest, $data);
 
         $message = $emailQueued

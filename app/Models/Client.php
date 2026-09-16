@@ -13,12 +13,14 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 
-#[Fillable(['firstname', 'middlename', 'lastname', 'fullname', 'email', 'mobile_no', 'fax_no', 'age', 'gender', 'address', 'region', 'province', 'municipality', 'tel_no', 'type_client', 'company', 'school_name', 'business_role', 'enterprise_size', 'market', 'products', 'source', 'service', 'description'])]
-class Client extends Model
+#[Fillable(['firstname', 'middlename', 'lastname', 'fullname', 'email', 'mobile_no', 'fax_no', 'age', 'gender', 'address', 'region', 'province', 'municipality', 'tel_no', 'type_client', 'company', 'school_name', 'business_role', 'enterprise_size', 'market', 'products', 'source', 'service'])]
+class Client extends Model implements Auditable
 {
     /** @use HasFactory<ClientFactory> */
-    use HasFactory;
+    use AuditableTrait, HasFactory;
 
     use SoftDeletes;
 

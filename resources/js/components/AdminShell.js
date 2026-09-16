@@ -25,6 +25,7 @@ export default defineComponent({
             { key: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: 'fa-solid fa-chart-line' },
             { key: 'clients', label: 'Clients', href: '/admin/clients', icon: 'fa-solid fa-address-book' },
             { key: 'requests', label: 'Requests', href: '/admin/requests', icon: 'fa-solid fa-clipboard-list' },
+            { key: 'site-visitors', label: 'Site Visitors', href: '/admin/site-visitors', icon: 'fa-solid fa-globe' },
             { key: 'reports', label: 'Reports', href: '/admin/reports', icon: 'fa-solid fa-chart-column' },
             { key: 'users', label: 'Users', href: '/admin/users', icon: 'fa-solid fa-users' },
             { key: 'roles-and-permissions', label: 'Roles and permissions', href: '/admin/roles-and-permissions', icon: 'fa-solid fa-user-shield' },
@@ -32,6 +33,7 @@ export default defineComponent({
             { key: 'feedback-builder', label: 'Feedback Builder', href: '/admin/feedback-builder', icon: 'fa-solid fa-star-half-stroke' },
             { key: 'smtp-configuration', label: 'SMTP configuration', href: '/admin/smtp-configuration', icon: 'fa-solid fa-envelope' },
             { key: 'ulims-configuration', label: 'ULIMS configuration', href: '/admin/ulims-configuration', icon: 'fa-solid fa-flask' },
+            { key: 'audit-trails', label: 'Audit Trails', href: '/admin/audit-trails', icon: 'fa-solid fa-clock-rotate-left' },
             { key: 'my-account', label: 'My account', href: '/admin/my-account', icon: 'fa-solid fa-circle-user' },
         ];
 

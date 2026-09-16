@@ -33,7 +33,6 @@ class ClientFactory extends Factory
             'type_client' => ClientType::Individual->value,
             'source' => ClientSource::Internet->value,
             'service' => ClientService::RddServices->value,
-            'description' => fake()->sentence(),
         ];
     }
 }

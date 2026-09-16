@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 
 #[Fillable(['service_request_id', 'reference_no', 'sample_no', 'sample_type', 'due_date', 'sub_total', 'discount', 'total_fee', 'op_no', 'or_no', 'op_attachment', 'or_attachment'])]
-class ProcessingRequest extends Model
+class ProcessingRequest extends Model implements Auditable
 {
     /** @use HasFactory<ProcessingRequestFactory> */
-    use HasFactory;
+    use AuditableTrait, HasFactory;
 
     public function serviceRequest(): BelongsTo
     {

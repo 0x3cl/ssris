@@ -9,6 +9,6 @@ export const markRequiredFields = (scope, labels) => {
         }
 
         label.classList.add('required-label');
-        container.querySelector('input, textarea, button')?.setAttribute('aria-required', 'true');
+        container.querySelector('input, textarea, select, button')?.setAttribute('aria-required', 'true');
     });
 };

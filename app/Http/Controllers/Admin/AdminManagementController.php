@@ -30,7 +30,9 @@ use Throwable;
 
 class AdminManagementController extends Controller
 {
-    private const MODULES = ['dashboard', 'clients', 'requests', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'feedback-builder', 'smtp-configuration', 'ulims-configuration'];
+    public const MODULES = ['dashboard', 'clients', 'requests', 'site-visitors', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'feedback-builder', 'smtp-configuration', 'ulims-configuration', 'audit-trails'];
+
+    public const READ_ONLY_MODULES = ['audit-trails'];
 
     public function dashboard(Request $request): Response
     {
@@ -93,12 +95,12 @@ class AdminManagementController extends Controller
 
     public function createRole(): Response
     {
-        return Inertia::render('admin/role-form', ['modules' => self::MODULES, 'role' => null]);
+        return Inertia::render('admin/role-form', ['modules' => self::MODULES, 'readOnlyModules' => self::READ_ONLY_MODULES, 'role' => null]);
     }
 
     public function editRole(Role $role): Response
     {
-        return Inertia::render('admin/role-form', ['modules' => self::MODULES, 'role' => $role->load('permissions')]);
+        return Inertia::render('admin/role-form', ['modules' => self::MODULES, 'readOnlyModules' => self::READ_ONLY_MODULES, 'role' => $role->load('permissions')]);
     }
 
     public function saveRole(Request $request, ?Role $role = null): RedirectResponse
@@ -121,7 +123,9 @@ class AdminManagementController extends Controller
             ->flatMap(function ($access, $module) {
                 $access = collect($access)->filter();
 
-                if ($access->contains('write') && ! $access->contains('read')) {
+                if (in_array($module, self::READ_ONLY_MODULES, true)) {
+                    $access = $access->intersect(['read']);
+                } elseif ($access->contains('write') && ! $access->contains('read')) {
                     $access->push('read');
                 }
 

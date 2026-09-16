@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\DB;
     {--rdd : Generate an R&D Services request}
     {--lab : Generate a Lab Services request}
     {--processing : Generate a Processing Services request}
+    {--training : Generate a Training Services request}
+    {--tour : Generate a Plant Tour Services request}
+    {--library : Generate a Library Registration request}
     {--amount=1 : Amount of requests to generate}')]
 #[Description('Generate a sample service request')]
 class CreateRequest extends Command
@@ -87,6 +90,9 @@ class CreateRequest extends Command
             'rdd' => ClientService::RddServices,
             'lab' => ClientService::LabServices,
             'processing' => ClientService::ProcessingServices,
+            'training' => ClientService::TrainingServices,
+            'tour' => ClientService::PlantTourServices,
+            'library' => ClientService::LibraryRegistration,
         ];
         $selectedServices = array_filter(
             $services,
@@ -95,7 +101,7 @@ class CreateRequest extends Command
         );
 
         if (count($selectedServices) !== 1) {
-            $this->components->error('Choose exactly one service: --rdd, --lab, or --processing.');
+            $this->components->error('Choose exactly one service: --rdd, --lab, --processing, --training, --tour, or --library.');
 
             return null;
         }

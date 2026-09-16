@@ -116,7 +116,6 @@ class ClientService
             'products' => ['sometimes', 'nullable', 'string', 'max:255'],
             'source' => [$presence, 'required', Rule::enum(ClientSource::class)],
             'service' => [$presence, 'required', Rule::enum(ClientServiceType::class)],
-            'description' => [$presence, 'required', 'string'],
         ])->validate();
     }
 }

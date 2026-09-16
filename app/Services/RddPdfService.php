@@ -11,9 +11,9 @@ class RddPdfService
      */
     public function render(array $request, array $rdd): string
     {
-        $pdf = new TCPDF('P', 'pt', 'A4', true, 'UTF-8', false);
+        $pdf = new NumberedPdf('P', 'pt', 'A4', true, 'UTF-8', false);
         $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
+        $pdf->setPrintFooter(true);
         $pdf->SetTitle($rdd['reference_no']);
         $pdf->SetMargins(42, 24, 42);
         $pdf->SetAutoPageBreak(false);
@@ -21,14 +21,13 @@ class RddPdfService
         $pdf->AddPage();
         $pdf->SetLineWidth(0.5);
         $this->text($pdf, 474, 22, 84, 24, "RDD Form No. 001\nRev. 2/15-05-17", '', 8);
-        $pdf->Rect(43, 45, 512, 85);
         $pdf->Image(resource_path('images/ptri-logo.jpg'), 55, 60, 58, 58);
-        $this->text($pdf, 132, 52, 399, 12, 'Department of Science and Technology', '', 8, 'C');
-        $this->text($pdf, 132, 64, 399, 12, 'PHILIPPINE TEXTILE RESEARCH INSTITUTE', 'B', 9, 'C');
-        $this->text($pdf, 132, 76, 399, 12, 'Research and Development Division', 'B', 8, 'C');
-        $this->text($pdf, 132, 88, 399, 12, 'Gen. Santos Ave., Bicutan Taguig City, 1631 Philippines', '', 7, 'C');
-        $this->text($pdf, 132, 100, 399, 12, 'Tel Nos. (632) 827-2171 to 82 loc. 2367 Telefax No. 88371349', '', 7, 'C');
-        $this->text($pdf, 132, 112, 399, 12, 'http://www.ptri.dost.gov.ph', '', 7, 'C');
+        $this->text($pdf, 42, 52, 514, 12, 'Department of Science and Technology', '', 8, 'C');
+        $this->text($pdf, 42, 64, 514, 12, 'PHILIPPINE TEXTILE RESEARCH INSTITUTE', 'B', 9, 'C');
+        $this->text($pdf, 42, 76, 514, 12, 'Research and Development Division', 'B', 8, 'C');
+        $this->text($pdf, 42, 88, 514, 12, 'Gen. Santos Ave., Bicutan Taguig City, 1631 Philippines', '', 7, 'C');
+        $this->text($pdf, 42, 100, 514, 12, 'Tel Nos. (632) 827-2171 to 82 loc. 2367 Telefax No. 88371349', '', 7, 'C');
+        $this->text($pdf, 42, 112, 514, 12, 'http://www.ptri.dost.gov.ph', '', 7, 'C');
         $this->text($pdf, 42, 141, 514, 18, 'SERVICE REQUEST FORM', 'BI', 11, 'C');
         $this->text($pdf, 42, 164, 514, 16, 'Section 1  (To be filled out by customer)', 'I', 9, 'C');
         $this->text($pdf, 42, 188, 210, 16, 'Customer Information', 'B');
@@ -85,12 +84,12 @@ class RddPdfService
             $y += 20;
         }
         $pdf->SetLineStyle(['dash' => '4,2']);
-        $pdf->Line(42, 766, 556, 766);
+        $pdf->Line(42, 750, 556, 750);
         $pdf->SetLineStyle(['dash' => 0]);
-        $this->text($pdf, 42, 778, 514, 16, 'Materials accepted in good quality condition.', 'B', 9, 'C');
-        $this->field($pdf, 42, 800, 216, 'Released by:', '');
-        $this->field($pdf, 258, 800, 186, 'Received by:', '');
-        $this->field($pdf, 444, 800, 112, 'Date:', '');
+        $this->text($pdf, 42, 762, 514, 16, 'Materials accepted in good quality condition.', 'B', 9, 'C');
+        $this->field($pdf, 42, 784, 216, 'Released by:', '');
+        $this->field($pdf, 258, 784, 186, 'Received by:', '');
+        $this->field($pdf, 444, 784, 112, 'Date:', '');
 
         return $pdf->Output('', 'S');
     }

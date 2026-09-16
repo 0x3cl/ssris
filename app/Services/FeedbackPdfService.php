@@ -13,11 +13,11 @@ class FeedbackPdfService
      */
     public function render(array $dimensions, array $questions, array $ratings): string
     {
-        $pdf = new TCPDF('L', 'pt', 'A4', true, 'UTF-8', false);
+        $pdf = new NumberedPdf('L', 'pt', 'A4', true, 'UTF-8', false);
         $pdf->SetCreator((string) config('app.name'));
         $pdf->SetTitle('Customer Satisfaction Feedback');
         $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
+        $pdf->setPrintFooter(true);
         $pdf->SetMargins(24, 24, 24);
         $pdf->SetAutoPageBreak(false);
         $pdf->AddPage();
@@ -68,7 +68,7 @@ class FeedbackPdfService
             $y += $questionHeight;
         }
 
-        if ($y + 28 > $bottom) {
+        if ($y + 48 > $bottom) {
             $pdf->AddPage();
             $y = 24.0;
         }
@@ -85,57 +85,80 @@ class FeedbackPdfService
 
     private function drawDocumentHeader(TCPDF $pdf, float $x, float $width): float
     {
-        $pdf->SetTextColor(7, 85, 158);
-        $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->SetXY($x, 26);
-        $pdf->Cell($width, 13, 'PHILIPPINE TEXTILE RESEARCH INSTITUTE', 0, 0, 'C');
         $pdf->SetTextColor(15, 23, 42);
-        $pdf->SetFont('helvetica', 'B', 16);
-        $pdf->SetXY($x, 50);
-        $pdf->Cell($width, 22, 'CUSTOMER SATISFACTION FEEDBACK', 0, 0, 'C');
-        $pdf->SetDrawColor(7, 85, 158);
-        $pdf->SetLineWidth(1.5);
-        $pdf->Line($x, 84, $x + $width, 84);
+        $pdf->SetFont('helvetica', '', 7);
+        $pdf->SetXY($x + $width - 150, 20);
+        $pdf->MultiCell(150, 20, "TSD Form No. 008\nRev 2/31-10-23", 0, 'R');
+
+        $pdf->Image(resource_path('images/ptri-logo.jpg'), $x, 22, 34, 34);
+
+        $pdf->SetFont('helvetica', 'B', 10);
+        $pdf->SetXY($x, 27);
+        $pdf->Cell($width, 13, 'PHILIPPINE TEXTILE RESEARCH INSTITUTE', 0, 0, 'C');
+
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->SetXY($x, 41);
+        $pdf->Cell($width, 12, 'Technical Services Division', 0, 0, 'C');
+
+        $pdf->SetFont('helvetica', '', 7);
+        $pdf->SetXY($x, 52);
+        $pdf->Cell($width, 11, 'Gen. Santos Ave., Bicutan, Taguig City', 0, 0, 'C');
+
+        $pdf->SetFont('helvetica', 'B', 15);
+        $pdf->SetXY($x, 72);
+        $pdf->Cell($width, 20, 'CUSTOMER SATISFACTION FEEDBACK', 0, 0, 'C');
+
+        $pdf->SetDrawColor(15, 23, 42);
+        $pdf->SetLineWidth(0.75);
+        $pdf->Line($x, 96, $x + $width, 96);
         $pdf->SetLineWidth(0.2);
 
-        return 84.0;
+        return 96.0;
     }
 
     private function drawProfile(TCPDF $pdf, float $x, float $width, float $y): float
     {
-        $height = 88.0;
+        $rowHeight = 20.0;
+        $rows = 6;
+        $height = $rowHeight * $rows;
         $half = $width / 2;
-        $pdf->SetDrawColor(148, 163, 184);
+
+        $pdf->SetDrawColor(15, 23, 42);
         $pdf->Rect($x, $y, $width, $height);
-        foreach ([20.0, 40.0, 60.0, 74.0] as $offset) {
-            $pdf->Line($x, $y + $offset, $x + $width, $y + $offset);
+        for ($i = 1; $i < $rows; $i++) {
+            $pdf->Line($x, $y + ($rowHeight * $i), $x + $width, $y + ($rowHeight * $i));
         }
-        $pdf->Line($x + $half, $y, $x + $half, $y + 20);
+        $pdf->Line($x + $half, $y, $x + $half, $y + $rowHeight);
+        $pdf->Line($x + $half, $y + ($rowHeight * 2), $x + $half, $y + ($rowHeight * 3));
 
-        $this->profileField($pdf, $x + 8, $y + 5, 'PSR No.:', 235);
-        $this->profileField($pdf, $x + $half + 8, $y + 5, 'Date:', 235);
-        $this->profileField($pdf, $x + 8, $y + 25, "Customer's Name (optional):", 275);
-        $this->profileField($pdf, $x + 360, $y + 25, 'Company/School:', 175);
-        $this->profileField($pdf, $x + 8, $y + 45, 'Address:', 405);
+        $this->profileField($pdf, $x + 8, $y + 5, 'PSR No.:', $half - 20);
+        $this->profileField($pdf, $x + $half + 8, $y + 5, 'Date:', $width - $half - 20);
 
+        $this->profileField($pdf, $x + 8, $y + $rowHeight + 5, "Customer's Name (optional):", $width - 20);
+
+        $this->profileField($pdf, $x + 8, $y + ($rowHeight * 2) + 5, 'Company/School:', $half - 20);
         $pdf->SetTextColor(15, 23, 42);
         $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->Text($x + 430, $y + 45, 'Gender:');
-        $this->checkboxLabel($pdf, $x + 475, $y + 44, 'Male');
-        $this->checkboxLabel($pdf, $x + 525, $y + 44, 'Female');
+        $pdf->Text($x + $half + 8, $y + ($rowHeight * 2) + 5, 'Gender:');
+        $cursor = $x + $half + 55;
+        foreach (['Male', 'Female'] as $label) {
+            $cursor = $this->checkboxLabel($pdf, $cursor, $y + ($rowHeight * 2) + 4, $label) + 14;
+        }
+
+        $this->profileField($pdf, $x + 8, $y + ($rowHeight * 3) + 5, 'Address:', $width - 20);
 
         $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->Text($x + 8, $y + 64, 'Age:');
-        $cursor = $x + 30;
+        $pdf->Text($x + 8, $y + ($rowHeight * 4) + 5, 'Age:');
+        $cursor = $x + 32;
         foreach (['Less than 20 years old', '21-30 years old', '31-40 years old', '41-60 years old', 'Above 60 years old'] as $label) {
-            $cursor = $this->checkboxLabel($pdf, $cursor, $y + 63, $label) + 10;
+            $cursor = $this->checkboxLabel($pdf, $cursor, $y + ($rowHeight * 4) + 4, $label) + 12;
         }
 
         $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->Text($x + 8, $y + 78, 'Type of Service:');
-        $cursor = $x + 78;
+        $pdf->Text($x + 8, $y + ($rowHeight * 5) + 5, 'Type of Service:');
+        $cursor = $x + 80;
         foreach (['R&D Services', 'Laboratory Services', 'Textile Processing'] as $label) {
-            $cursor = $this->checkboxLabel($pdf, $cursor, $y + 77, $label) + 14;
+            $cursor = $this->checkboxLabel($pdf, $cursor, $y + ($rowHeight * 5) + 4, $label) + 16;
         }
 
         return $y + $height;

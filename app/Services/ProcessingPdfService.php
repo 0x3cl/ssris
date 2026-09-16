@@ -35,9 +35,9 @@ class ProcessingPdfService
      */
     public function render(array $request, array $processing): string
     {
-        $pdf = new TCPDF('P', 'pt', 'A4', true, 'UTF-8', false);
+        $pdf = new NumberedPdf('P', 'pt', 'A4', true, 'UTF-8', false);
         $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
+        $pdf->setPrintFooter(true);
         $pdf->SetTitle($processing['reference_no']);
         $pdf->SetMargins(42, 24, 42);
         $pdf->SetAutoPageBreak(false);
@@ -45,14 +45,13 @@ class ProcessingPdfService
         $pdf->AddPage();
         $pdf->SetLineWidth(0.5);
         $this->formNumber($pdf);
-        $pdf->Rect(43, 45, 512, 85);
         $pdf->Image(resource_path('images/ptri-logo.jpg'), 55, 60, 58, 58);
-        $this->text($pdf, 132, 52, 399, 12, 'Department of Science and Technology', '', 8, 'C');
-        $this->text($pdf, 132, 64, 399, 12, 'PHILIPPINE TEXTILE RESEARCH INSTITUTE', 'B', 9, 'C');
-        $this->text($pdf, 132, 76, 399, 12, 'Technical Services Division', 'B', 8, 'C');
-        $this->text($pdf, 132, 88, 399, 12, 'Gen. Santos Ave., Bicutan Taguig City, 1631 Philippines', '', 7, 'C');
-        $this->text($pdf, 132, 100, 399, 12, 'Tel Nos. (632) 827-2171 to 82 loc. 2367 Telefax No. 88371349', '', 7, 'C');
-        $this->text($pdf, 132, 112, 399, 12, 'http://www.ptri.dost.gov.ph', '', 7, 'C');
+        $this->text($pdf, 42, 52, 514, 12, 'Department of Science and Technology', '', 8, 'C');
+        $this->text($pdf, 42, 64, 514, 12, 'PHILIPPINE TEXTILE RESEARCH INSTITUTE', 'B', 9, 'C');
+        $this->text($pdf, 42, 76, 514, 12, 'Technical Services Division', 'B', 8, 'C');
+        $this->text($pdf, 42, 88, 514, 12, 'Gen. Santos Ave., Bicutan Taguig City, 1631 Philippines', '', 7, 'C');
+        $this->text($pdf, 42, 100, 514, 12, 'Tel Nos. (632) 827-2171 to 82 loc. 2367 Telefax No. 88371349', '', 7, 'C');
+        $this->text($pdf, 42, 112, 514, 12, 'http://www.ptri.dost.gov.ph', '', 7, 'C');
         $this->text($pdf, 42, 141, 514, 18, 'PROCESSING SERVICES REQUEST', 'BI', 11, 'C');
         $this->text($pdf, 42, 164, 514, 16, 'PART 1  (To be filled out by customer)', 'I', 9, 'C');
         $this->text($pdf, 42, 188, 514, 16, 'Date/Time: '.$request['created_at'], '', 8, 'R');
@@ -110,7 +109,6 @@ class ProcessingPdfService
         }
         $y += 20;
         $this->text($pdf, 42, $y, 514, 14, 'Please refer at the back page for the terms and conditions', 'I', 8, 'C');
-        $this->text($pdf, 42, $y + 18, 514, 14, 'Page 1 of 2', '', 8, 'C');
 
         $pdf->AddPage();
         $this->formNumber($pdf);
@@ -122,7 +120,6 @@ class ProcessingPdfService
         }
         $y += 20;
         $this->text($pdf, 42, $y, 514, 16, '(  )  I have read and agreed to the Terms and Conditions', 'BI', 9, 'C');
-        $this->text($pdf, 42, 800, 514, 14, 'Page 2 of 2', '', 8, 'C');
 
         return $pdf->Output('', 'S');
     }

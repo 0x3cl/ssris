@@ -2,22 +2,18 @@
 
 namespace App\Http\Middleware;
 
+use App\Jobs\StoreVisitor;
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class CaptureVisitorsMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
-
-        $ip = $request->getClientIp();
-        // dd($ip);
+        StoreVisitor::dispatch(
+            $request->ip(),
+            $request->userAgent()
+        );
 
         return $next($request);
     }

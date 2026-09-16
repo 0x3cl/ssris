@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\AuditTrailController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\FeedbackDimensionController;
 use App\Http\Controllers\Admin\FeedbackQuestionController;
@@ -12,6 +14,8 @@ use App\Http\Controllers\Admin\LabRequestController;
 use App\Http\Controllers\Admin\ProcessingRequestController;
 use App\Http\Controllers\Admin\RddRequestController;
 use App\Http\Controllers\Admin\ServiceRequestController;
+use App\Http\Controllers\Admin\SiteVisitorController;
+use App\Http\Controllers\Admin\TrainingRequestController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\HomeController;
@@ -33,6 +37,9 @@ Route::post('book-an-appointment/validate', [AppointmentController::class, 'vali
 Route::post('book-an-appointment', [AppointmentController::class, 'store'])->name('appointment.store');
 Route::get('feedback/{token}', [FeedbackController::class, 'show'])->name('feedback.show');
 Route::post('feedback/{token}', [FeedbackController::class, 'store'])->name('feedback.store');
+Route::get('address/regions', [AddressController::class, 'regions'])->name('address.regions');
+Route::get('address/regions/{region}/provinces', [AddressController::class, 'provinces'])->name('address.provinces');
+Route::get('address/provinces/{province}/municipalities', [AddressController::class, 'municipalities'])->name('address.municipalities');
 
 Route::get('dashboard', [AdminManagementController::class, 'dashboard'])
     ->middleware(['auth', 'role:superadmin'])
@@ -50,6 +57,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('clients/{client}/archive', [ClientController::class, 'archive'])->name('clients.archive');
         Route::patch('clients/{client}/restore', [ClientController::class, 'restore'])->name('clients.restore');
         Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
+        Route::get('site-visitors', [SiteVisitorController::class, 'index'])->name('site-visitors');
         Route::get('requests', [ServiceRequestController::class, 'index'])->name('requests.index');
         Route::get('requests/{serviceRequest}/logs', [ServiceRequestController::class, 'logs'])->name('requests.logs');
         Route::patch('requests/{serviceRequest}/proceed', [ServiceRequestController::class, 'proceed'])->name('requests.proceed');
@@ -88,6 +96,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('requests/{serviceRequest}/lab-request/feedback/remind', [LabRequestController::class, 'sendFeedbackReminder'])->name('requests.lab.feedback.remind');
         Route::post('requests/{serviceRequest}/lab-request/feedback/generate-link', [LabRequestController::class, 'generateFeedbackLink'])->name('requests.lab.feedback.generate-link');
         Route::get('requests/{serviceRequest}/lab-request/feedback/responses/{feedbackLink}', [LabRequestController::class, 'viewFeedbackResponse'])->name('requests.lab.feedback.response');
+        Route::get('requests/{serviceRequest}/training-request', [TrainingRequestController::class, 'create'])->name('requests.training.create');
+        Route::post('requests/{serviceRequest}/training-request', [TrainingRequestController::class, 'store'])->name('requests.training.store');
+        Route::get('requests/{serviceRequest}/training-request/pdf', [TrainingRequestController::class, 'downloadPdf'])->name('requests.training.pdf');
+        Route::get('requests/{serviceRequest}/training-request/fee', [TrainingRequestController::class, 'createFee'])->name('requests.training.fee.create');
+        Route::post('requests/{serviceRequest}/training-request/fee', [TrainingRequestController::class, 'storeFee'])->name('requests.training.fee.store');
+        Route::get('requests/{serviceRequest}/training-request/fee/pdf', [TrainingRequestController::class, 'downloadFeePdf'])->name('requests.training.fee.pdf');
+        Route::get('requests/{serviceRequest}/training-request/attachments/{type}', [TrainingRequestController::class, 'downloadPaymentAttachment'])->name('requests.training.attachment');
+        Route::get('requests/{serviceRequest}/training-request/payment', [TrainingRequestController::class, 'editPayment'])->name('requests.training.payment.edit');
+        Route::post('requests/{serviceRequest}/training-request/payment', [TrainingRequestController::class, 'updatePayment'])->name('requests.training.payment.update');
+        Route::post('requests/{serviceRequest}/training-request/payment/remind', [TrainingRequestController::class, 'sendPaymentReminder'])->name('requests.training.payment.remind');
+        Route::get('requests/{serviceRequest}/training-request/feedback', [TrainingRequestController::class, 'editFeedback'])->name('requests.training.feedback.edit');
+        Route::post('requests/{serviceRequest}/training-request/feedback/remind', [TrainingRequestController::class, 'sendFeedbackReminder'])->name('requests.training.feedback.remind');
+        Route::post('requests/{serviceRequest}/training-request/feedback/generate-link', [TrainingRequestController::class, 'generateFeedbackLink'])->name('requests.training.feedback.generate-link');
+        Route::get('requests/{serviceRequest}/training-request/feedback/responses/{feedbackLink}', [TrainingRequestController::class, 'viewFeedbackResponse'])->name('requests.training.feedback.response');
         Route::get('roles-and-permissions', [AdminManagementController::class, 'roles'])->name('roles');
         Route::get('roles-and-permissions/create', [AdminManagementController::class, 'createRole'])->name('roles.create');
         Route::get('roles-and-permissions/{role}/edit', [AdminManagementController::class, 'editRole'])->name('roles.edit');
@@ -134,6 +156,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('ulims-configuration', [AdminManagementController::class, 'ulimsSettings'])->name('ulims');
         Route::put('ulims-configuration', [AdminManagementController::class, 'saveUlimsSettings'])->name('ulims.update');
         Route::post('ulims-configuration/test', [AdminManagementController::class, 'testUlimsConnection'])->name('ulims.test');
+        Route::get('audit-trails', [AuditTrailController::class, 'index'])->name('audit-trails');
         Route::get('my-account', [AdminManagementController::class, 'account'])->name('account');
         Route::post('my-account', [AdminManagementController::class, 'saveAccount'])->name('account.update');
         Route::get('requests/{serviceRequest}/{service}', [ClientController::class, 'showRequest'])->name('requests.client-detail');

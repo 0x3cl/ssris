@@ -1,15 +1,23 @@
 import { Head } from '@inertiajs/vue3';
-import { defineComponent } from 'vue';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import { defineComponent, onMounted } from 'vue';
+import PrivacyNoticeCard from '../components/PrivacyNoticeCard';
 
 export default defineComponent({
     name: 'Index',
-    components: { Head },
+    components: { Head, PrivacyNoticeCard },
+    setup() {
+        onMounted(() => {
+            AOS.init({ duration: 600, once: true });
+        });
+    },
     template: `
         <Head title="Choose a service" />
 
         <main class="bg-slate-50 px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16">
             <section class="mx-auto grid w-full max-w-[1800px] gap-10 lg:grid-cols-[1.1fr_0.9fr] xl:gap-14 lg:items-stretch">
-                <aside class="overflow-hidden rounded-3xl shadow-sm">
+                <aside data-aos="fade-right" class="overflow-hidden rounded-3xl shadow-sm">
                     <img src="/assets/landing/left-panel-bg.png" alt="Registration Information System: PTRI services for laboratory testing and analysis, textile processing, technical training, and facility tours" class="h-full w-full object-cover" />
                 </aside>
 
@@ -20,6 +28,7 @@ export default defineComponent({
                     <div class="mt-8 grid gap-5 md:grid-cols-2">
                     <a
                         href="/walk-in"
+                        data-aos="fade-up"
                         class="group flex min-h-80 flex-col items-center rounded-3xl border border-[#c8e0f4] bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#0d5ba6] hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#bfe5ff] focus-visible:outline-none"
                     >
                         <div class="flex h-44 w-full items-center justify-center p-4"><img src="/assets/undraw/walk-in-the-city.svg" alt="Person walking into the city" class="h-full w-full max-w-xs object-contain" /></div>
@@ -30,6 +39,8 @@ export default defineComponent({
 
                     <a
                         href="/book-an-appointment"
+                        data-aos="fade-up"
+                        data-aos-delay="100"
                         class="group flex min-h-80 flex-col items-center rounded-3xl border border-[#c8e0f4] bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#0d5ba6] hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#bfe5ff] focus-visible:outline-none"
                     >
                         <div class="flex h-44 w-full items-center justify-center p-4"><img src="/assets/undraw/schedule.svg" alt="Calendar schedule" class="h-full w-full max-w-xs object-contain" /></div>
@@ -42,6 +53,8 @@ export default defineComponent({
                         href="https://www.lbp-eservices.com/egps/portal/index.jsp"
                         target="_blank"
                         rel="noopener noreferrer"
+                        data-aos="fade-up"
+                        data-aos-delay="200"
                         class="group flex min-h-60 items-center gap-6 rounded-3xl border border-[#c8e0f4] bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-[#0d5ba6] hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#bfe5ff] focus-visible:outline-none md:col-span-2 sm:px-8"
                     >
                         <div class="flex h-48 w-46 shrink-0 items-center justify-center rounded-2xl p-5 sm:h-32 sm:w-44">
@@ -56,6 +69,7 @@ export default defineComponent({
                     </div>
                 </div>
             </section>
+            <PrivacyNoticeCard position="left" />
         </main>
     `,
 });

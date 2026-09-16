@@ -32,7 +32,7 @@ export default defineComponent({
     },
     template: `
         <Head title="Customer Satisfaction Feedback" />
-        <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
+        <div class="flex flex-1 items-center justify-center bg-slate-50 px-4 py-10">
             <section class="w-full max-w-lg rounded-3xl bg-white p-8 text-center shadow-2xl sm:p-10">
                 <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full text-3xl" :class="details.tone">
                     <i :class="details.icon" aria-hidden="true"></i>

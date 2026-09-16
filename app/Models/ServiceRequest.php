@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\ClientService;
+use App\Enums\ServiceRequestLogAction;
 use App\Enums\ServiceRequestStatus;
+use App\Services\ServiceRequestLogger;
 use Database\Factories\ServiceRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,15 +13,31 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 
 #[Fillable([
     'service', 'is_appointment', 'client_id', 'description',
     'status', 'is_appointment_approved', 'appointment_date', 'appointment_time', 'reschedule_date', 'reschedule_time',
 ])]
-class ServiceRequest extends Model
+class ServiceRequest extends Model implements Auditable
 {
     /** @use HasFactory<ServiceRequestFactory> */
-    use HasFactory;
+    use AuditableTrait, HasFactory;
+
+    protected static function booted(): void
+    {
+        static::created(function (ServiceRequest $serviceRequest): void {
+            app(ServiceRequestLogger::class)->log(
+                $serviceRequest,
+                $serviceRequest->is_appointment ? ServiceRequestLogAction::Scheduled : ServiceRequestLogAction::Created,
+                $serviceRequest->is_appointment
+                    ? "Appointment request submitted for {$serviceRequest->appointment_date?->format('Y-m-d')} {$serviceRequest->appointment_time}."
+                    : 'Walk-in service request submitted by the client.',
+                $serviceRequest->client?->fullname,
+            );
+        });
+    }
 
     public function client(): BelongsTo
     {
@@ -39,6 +57,11 @@ class ServiceRequest extends Model
     public function labRequest(): HasOne
     {
         return $this->hasOne(LabRequest::class);
+    }
+
+    public function trainingRequest(): HasOne
+    {
+        return $this->hasOne(TrainingRequest::class);
     }
 
     public function logs(): HasMany

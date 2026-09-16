@@ -13,7 +13,7 @@ createInertiaApp({
         createApp({
             render: () => h('div', { class: 'flex min-h-screen flex-col' }, [
                 h(AppNavbar),
-                h('div', { class: 'flex-1' }, [h(App, props)]),
+                h('div', { class: 'flex flex-1 flex-col' }, [h(App, props)]),
                 h(AppFooter),
             ]),
         })

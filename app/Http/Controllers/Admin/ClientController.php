@@ -47,11 +47,16 @@ class ClientController extends Controller
             ClientService::RddServices => 'rdd',
             ClientService::LabServices => 'lab',
             ClientService::ProcessingServices => 'processing',
+            ClientService::TrainingServices => 'training',
             default => null,
         };
 
         if ($prefix === null) {
             return route('admin.requests.client-detail', ['serviceRequest' => $item->id, 'service' => $item->service->value]);
+        }
+
+        if ($prefix === 'training' && $item->status === ServiceRequestStatus::ForServiceFee) {
+            return route('admin.requests.training.fee.create', $item);
         }
 
         return match (true) {

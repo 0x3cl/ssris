@@ -11,9 +11,9 @@ class LabPdfService
      */
     public function render(array $request, array $lab): string
     {
-        $pdf = new TCPDF('P', 'pt', 'A4', true, 'UTF-8', false);
+        $pdf = new NumberedPdf('P', 'pt', 'A4', true, 'UTF-8', false);
         $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
+        $pdf->setPrintFooter(true);
         $pdf->SetTitle($lab['quotation_no']);
         $pdf->SetMargins(42, 24, 42);
         $pdf->SetAutoPageBreak(false);
@@ -127,7 +127,7 @@ class LabPdfService
         $this->text($pdf, 42 + $leftWidth, $y, $rightWidth, $rowHeights[1], 'PM-07.01-A-F1', 'B', 8, 'C');
         $y += $rowHeights[1];
         $this->text($pdf, 42, $y, $leftWidth, $rowHeights[2], 'PROCEDURES MANUAL FORM', 'B', 8, 'C');
-        $this->text($pdf, 42 + $leftWidth, $y, $rightWidth, $rowHeights[2], 'Page 1 of 1', '', 8, 'C');
+        $this->text($pdf, 42 + $leftWidth, $y, $rightWidth, $rowHeights[2], 'Page '.$pdf->getAliasNumPage().' of '.$pdf->getAliasNbPages(), '', 8, 'C');
         $y += $rowHeights[2];
         $this->text($pdf, 42, $y, $leftWidth, $rowHeights[3], 'Quotation for Testing Services', 'B', 11, 'C');
         $this->text($pdf, 42 + $leftWidth + 6, $y + 4, $rightWidth - 10, $rowHeights[3], "Revision.: 1\nDate of Issue: 04 January 2024", '', 7, 'L');

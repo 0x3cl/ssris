@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 
 #[Fillable(['service_request_id', 'token', 'expires_at', 'submitted_at'])]
-class FeedbackLink extends Model
+class FeedbackLink extends Model implements Auditable
 {
     /** @use HasFactory<FeedbackLinkFactory> */
-    use HasFactory;
+    use AuditableTrait, HasFactory;
 
     public function serviceRequest(): BelongsTo
     {

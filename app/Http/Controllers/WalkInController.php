@@ -113,13 +113,6 @@ class WalkInController extends Controller
             ]);
         });
 
-        $this->serviceRequestLogger->log(
-            $serviceRequest,
-            ServiceRequestLogAction::Created,
-            'Walk-in service request submitted by the client.',
-            $data['fullname'],
-        );
-
         $emailQueued = $this->sendAcknowledgementEmail($serviceRequest, $data);
 
         $message = $emailQueued

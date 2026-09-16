@@ -7,12 +7,14 @@ use Database\Factories\FormTemplateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 
 #[Fillable(['key', 'name', 'subject', 'body', 'variables'])]
-class FormTemplate extends Model
+class FormTemplate extends Model implements Auditable
 {
     /** @use HasFactory<FormTemplateFactory> */
-    use HasFactory;
+    use AuditableTrait, HasFactory;
 
     /**
      * Replace every `{{ placeholder }}` in the subject and body with the given values.

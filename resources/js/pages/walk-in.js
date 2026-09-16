@@ -1,4 +1,6 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import { computed, defineComponent, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import ClientTypeModal from '../components/ClientTypeModal';
 import EmailLookupModal from '../components/EmailLookupModal';
@@ -123,6 +125,7 @@ export default defineComponent({
         const email = ref(props.selectedEmail ?? '');
         const form = reactive(blankClient(props.selectedService));
         const currentStep = ref(props.selectedService && props.selectedEmail ? 2 : 1);
+        const isLoadingServices = ref(true);
         const isLookingUp = ref(false);
         const lookupError = ref('');
         const showWelcome = ref(false);
@@ -138,6 +141,15 @@ export default defineComponent({
         const isSubmitting = ref(false);
         const isValidatingDetails = ref(false);
         const returningClient = ref(false);
+        const regions = ref([]);
+        const provinces = ref([]);
+        const municipalities = ref([]);
+        const regionCode = ref('');
+        const provinceCode = ref('');
+        const municipalityCode = ref('');
+        const regionHasNoProvinces = ref(false);
+        const isLoadingProvinces = ref(false);
+        const isLoadingMunicipalities = ref(false);
         const hasSelectedService = computed(() => Boolean(selectedService.value));
         const isAcademe = computed(() => form.type_client === 'academe');
         const isBusiness = computed(() => ['government', 'private-companies'].includes(form.type_client));
@@ -154,6 +166,117 @@ export default defineComponent({
             enterprise_size: { field: 'enterprise_size', title: 'Choose enterprise size', choices: withIllustrations(props.enterpriseSizes, 3) },
             market: { field: 'market', title: 'Choose market', choices: withIllustrations(props.markets, 6) },
         }));
+
+        const loadRegions = async () => {
+            if (regions.value.length > 0) return;
+
+            try {
+                const response = await fetch('/address/regions', { headers: { Accept: 'application/json' } });
+                const data = await response.json();
+                regions.value = data.regions ?? [];
+            } catch {
+                regions.value = [];
+            }
+        };
+
+        const loadProvincesForRegion = async (code) => {
+            isLoadingProvinces.value = true;
+
+            try {
+                const response = await fetch(`/address/regions/${code}/provinces`, { headers: { Accept: 'application/json' } });
+                const data = await response.json();
+                provinces.value = data.provinces ?? [];
+                regionHasNoProvinces.value = provinces.value.length === 0;
+                municipalities.value = regionHasNoProvinces.value ? (data.municipalities ?? []) : [];
+            } catch {
+                provinces.value = [];
+                municipalities.value = [];
+                regionHasNoProvinces.value = false;
+            } finally {
+                isLoadingProvinces.value = false;
+            }
+        };
+
+        const loadMunicipalitiesForProvince = async (code) => {
+            isLoadingMunicipalities.value = true;
+
+            try {
+                const response = await fetch(`/address/provinces/${code}/municipalities`, { headers: { Accept: 'application/json' } });
+                const data = await response.json();
+                municipalities.value = data.municipalities ?? [];
+            } catch {
+                municipalities.value = [];
+            } finally {
+                isLoadingMunicipalities.value = false;
+            }
+        };
+
+        const onRegionChange = async () => {
+            const region = regions.value.find((item) => item.code === regionCode.value);
+            form.region = region?.name ?? '';
+            form.province = '';
+            form.municipality = '';
+            provinceCode.value = '';
+            municipalityCode.value = '';
+            provinces.value = [];
+            municipalities.value = [];
+            regionHasNoProvinces.value = false;
+
+            if (!regionCode.value) return;
+
+            await loadProvincesForRegion(regionCode.value);
+
+            if (regionHasNoProvinces.value) {
+                form.province = region?.name ?? '';
+            }
+        };
+
+        const onProvinceChange = async () => {
+            const province = provinces.value.find((item) => item.code === provinceCode.value);
+            form.province = province?.name ?? '';
+            form.municipality = '';
+            municipalityCode.value = '';
+            municipalities.value = [];
+
+            if (provinceCode.value) {
+                await loadMunicipalitiesForProvince(provinceCode.value);
+            }
+        };
+
+        const onMunicipalityChange = () => {
+            const municipality = municipalities.value.find((item) => item.code === municipalityCode.value);
+            form.municipality = municipality?.name ?? '';
+        };
+
+        const hydrateAddressCascade = async () => {
+            if (!form.region) return;
+
+            await loadRegions();
+            const region = regions.value.find((item) => item.name === form.region);
+
+            if (!region) return;
+
+            regionCode.value = region.code;
+            await loadProvincesForRegion(region.code);
+
+            if (regionHasNoProvinces.value) {
+                const municipality = municipalities.value.find((item) => item.name === form.municipality);
+
+                if (municipality) municipalityCode.value = municipality.code;
+
+                return;
+            }
+
+            const province = provinces.value.find((item) => item.name === form.province);
+
+            if (!province) return;
+
+            provinceCode.value = province.code;
+            await loadMunicipalitiesForProvince(province.code);
+            const municipality = municipalities.value.find((item) => item.name === form.municipality);
+
+            if (municipality) municipalityCode.value = municipality.code;
+        };
 
         const findClient = async () => {
             lookupError.value = '';
@@ -178,6 +301,18 @@ export default defineComponent({
                 showEmailModal.value = false;
                 currentStep.value = 2;
                 window.history.pushState({}, '', `/walk-in?selected=${encodeURIComponent(selectedService.value)}&email=${encodeURIComponent(email.value)}`);
+
+                regionCode.value = '';
+                provinceCode.value = '';
+                municipalityCode.value = '';
+                provinces.value = [];
+                municipalities.value = [];
+                regionHasNoProvinces.value = false;
+                await loadRegions();
+
+                if (form.region) {
+                    await hydrateAddressCascade();
+                }
             } catch {
                 lookupError.value = 'We could not check that email. Please try again.';
             } finally {
@@ -215,7 +350,7 @@ export default defineComponent({
 
             return [...document.querySelectorAll('#client-details label')]
                 .find((element) => element.querySelector('span')?.textContent.trim() === label)
-                ?.querySelector('input, textarea')
+                ?.querySelector('input, textarea, select')
                 ?? [...document.querySelectorAll('#client-details button')]
                     .find((element) => element.parentElement?.querySelector(':scope > span')?.textContent.trim() === label);
         };
@@ -315,9 +450,23 @@ export default defineComponent({
             submitWalkIn();
         };
 
+        const revealServices = () => {
+            isLoadingServices.value = false;
+            nextTick(() => AOS.refreshHard());
+        };
+
         onMounted(() => {
+            AOS.init({ duration: 600, once: true });
+            nextTick(revealServices);
+
             if (props.selectedService && props.selectedEmail) {
                 findClient();
+            }
+        });
+
+        watch(currentStep, (step) => {
+            if (step === 1) {
+                revealServices();
             }
         });
 
@@ -357,11 +506,24 @@ export default defineComponent({
             isBusiness,
             isPrivateCompany,
             isLookingUp,
+            isLoadingServices,
+            isLoadingProvinces,
+            isLoadingMunicipalities,
             isSubmitting,
             isValidatingDetails,
             lookupError,
+            municipalities,
+            municipalityCode,
+            onMunicipalityChange,
+            onProvinceChange,
+            onRegionChange,
             openEmailModal,
             openTermsModal,
+            provinceCode,
+            provinces,
+            regionCode,
+            regionHasNoProvinces,
+            regions,
             selectClientType,
             selectedClientTypeLabel,
             selectedBusinessRoleLabel,
@@ -403,10 +565,19 @@ export default defineComponent({
                     <section v-if="currentStep === 1" class="mt-8 border-t border-slate-100 pt-7">
                         <h2 class="text-xl font-semibold text-slate-900">Choose a service</h2>
                         <p class="mt-1 text-slate-600">Your choice will remain in the page URL when you continue.</p>
-                        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div v-if="isLoadingServices" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div v-for="n in 6" :key="n" class="animate-pulse rounded-2xl border border-slate-200 bg-white p-4">
+                                <div class="aspect-[4/3] rounded-xl bg-slate-100"></div>
+                                <div class="mt-4 h-4 w-2/3 rounded bg-slate-100"></div>
+                                <div class="mt-2 h-3 w-1/2 rounded bg-slate-100"></div>
+                            </div>
+                        </div>
+                        <div v-else class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             <ServiceCard
-                                v-for="service in services"
+                                v-for="(service, index) in services"
                                 :key="service.value"
+                                data-aos="fade-up"
+                                :data-aos-delay="index * 75"
                                 :illustration="serviceIllustrations[service.value]"
                                 :selected="selectedService === service.value"
                                 :service="service"
@@ -489,15 +660,24 @@ export default defineComponent({
                                         </label>
                                         <label class="md:col-span-2">
                                             <span class="text-sm font-medium text-slate-700">Region</span>
-                                            <input v-model="form.region" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                            <select v-model="regionCode" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5" @change="onRegionChange">
+                                                <option value="">Select region</option>
+                                                <option v-for="region in regions" :key="region.code" :value="region.code">{{ region.name }}</option>
+                                            </select>
                                         </label>
                                         <label class="md:col-span-2">
                                             <span class="text-sm font-medium text-slate-700">Province</span>
-                                            <input v-model="form.province" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                            <select v-model="provinceCode" :disabled="!regionCode || regionHasNoProvinces" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 disabled:cursor-not-allowed disabled:bg-slate-100" @change="onProvinceChange">
+                                                <option value="">{{ regionHasNoProvinces ? 'Not applicable' : (isLoadingProvinces ? 'Loading…' : 'Select province') }}</option>
+                                                <option v-for="province in provinces" :key="province.code" :value="province.code">{{ province.name }}</option>
+                                            </select>
                                         </label>
                                         <label class="md:col-span-2">
                                             <span class="text-sm font-medium text-slate-700">Municipality</span>
-                                            <input v-model="form.municipality" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                            <select v-model="municipalityCode" :disabled="!regionCode || (!regionHasNoProvinces && !provinceCode)" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 disabled:cursor-not-allowed disabled:bg-slate-100" @change="onMunicipalityChange">
+                                                <option value="">{{ isLoadingMunicipalities ? 'Loading…' : 'Select municipality' }}</option>
+                                                <option v-for="municipality in municipalities" :key="municipality.code" :value="municipality.code">{{ municipality.name }}</option>
+                                            </select>
                                         </label>
                                     </div>
                                 </section>
