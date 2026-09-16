@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { defineComponent, reactive } from 'vue';
 import AdminPagination from '../../components/AdminPagination';
 import AdminShell from '../../components/AdminShell';
@@ -6,7 +6,7 @@ import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 
 export default defineComponent({
     name: 'AdminFeedbackRatings',
-    components: { AdminPagination, AdminShell, DeleteConfirmationModal, Head },
+    components: { AdminPagination, AdminShell, DeleteConfirmationModal, Head, Link },
     props: { filters: { type: Object, required: true }, ratings: { type: Object, required: true } },
     setup(props) {
         const filters = reactive({ ...props.filters });
@@ -36,9 +36,9 @@ export default defineComponent({
                         <h2 class="mt-1 text-2xl font-bold text-slate-900">Rating scale</h2>
                         <p class="mt-1 text-slate-600">The rating options clients choose from, e.g. 1&ndash;5 and Not Applicable.</p>
                     </div>
-                    <a href="/admin/feedback-builder" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:border-[#07559e] hover:text-[#07559e]">
+                    <Link href="/admin/feedback-builder" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:border-[#07559e] hover:text-[#07559e]">
                         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Back to dimensions
-                    </a>
+                    </Link>
                 </div>
                 <div class="mt-7 flex flex-wrap items-end justify-between gap-4">
                     <label class="text-sm font-semibold text-slate-700">
@@ -49,9 +49,9 @@ export default defineComponent({
                             <option :value="50">50</option>
                         </select>
                     </label>
-                    <a href="/admin/feedback-builder/ratings/create" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00aeef] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#009bd8]">
+                    <Link href="/admin/feedback-builder/ratings/create" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00aeef] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#009bd8]">
                         <i class="fa-solid fa-plus" aria-hidden="true"></i>Add rating
-                    </a>
+                    </Link>
                 </div>
                 <div class="mt-6 overflow-x-auto">
                     <table class="w-full min-w-[500px] text-left">
@@ -69,7 +69,7 @@ export default defineComponent({
                                 <td class="px-4 py-4 text-sm text-slate-700">{{ rating.name }}</td>
                                 <td class="px-4 py-4 text-sm text-slate-700">{{ rating.weight ?? '—' }}</td>
                                 <td class="px-4 py-4 text-right">
-                                    <a :href="'/admin/feedback-builder/ratings/' + rating.id + '/edit'" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-[#07559e] hover:bg-sky-100"><i class="fa-solid fa-pen" aria-hidden="true"></i>Edit</a>
+                                    <Link :href="'/admin/feedback-builder/ratings/' + rating.id + '/edit'" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-[#07559e] hover:bg-sky-100"><i class="fa-solid fa-pen" aria-hidden="true"></i>Edit</Link>
                                     <button type="button" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50" @click="remove(rating)"><i class="fa-solid fa-trash" aria-hidden="true"></i>Delete</button>
                                 </td>
                             </tr>

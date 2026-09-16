@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, defineComponent, onBeforeUnmount, reactive, ref } from 'vue';
 import AdminIndexControls from '../../components/AdminIndexControls';
 import AdminPagination from '../../components/AdminPagination';
@@ -13,7 +13,7 @@ const needsAppointmentConfirmation = (request) => request.type === 'appointment'
 
 export default defineComponent({
     name: 'AdminRequests',
-    components: { AdminIndexControls, AdminPagination, AdminShell, AppointmentConfirmModal, CodeConfirmationModal, ConfirmActionModal, Head, RequestDetailsModal },
+    components: { AdminIndexControls, AdminPagination, AdminShell, AppointmentConfirmModal, CodeConfirmationModal, ConfirmActionModal, Head, Link, RequestDetailsModal },
     props: { filters: { type: Object, required: true }, requests: { type: Object, required: true }, statuses: { type: Array, required: true }, services: { type: Array, required: true } },
     setup(props) {
         const filters = reactive({ ...props.filters });
@@ -249,45 +249,45 @@ export default defineComponent({
                                         <button v-if="request.status_value === 'pending'" type="button" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50" @click="proceed(request)">
                                             <i :class="needsAppointmentConfirmation(request) ? 'fa-solid fa-bolt' : 'fa-solid fa-arrow-right'" aria-hidden="true"></i>{{ needsAppointmentConfirmation(request) ? 'Take Action' : 'Proceed' }}
                                         </button>
-                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                                        <Link v-if="request.status_value === 'for-payment' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
                                             <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
-                                        </a>
-                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
                                             <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
-                                        </a>
-                                        <a v-if="request.status_value === 'completed' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'completed' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
                                             <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
-                                        </a>
-                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'for-payment' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
                                             <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
-                                        </a>
-                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
                                             <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
-                                        </a>
-                                        <a v-if="request.status_value === 'completed' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'completed' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
                                             <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
-                                        </a>
-                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'for-payment' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
                                             <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
-                                        </a>
-                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
                                             <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
-                                        </a>
-                                        <a v-if="request.status_value === 'completed' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'completed' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
                                             <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
-                                        </a>
-                                        <a v-if="request.status_value === 'for-service-fee' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/fee'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-sky-700 hover:bg-sky-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'for-service-fee' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/fee'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-sky-700 hover:bg-sky-50">
                                             <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>Service Fee
-                                        </a>
-                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'for-payment' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
                                             <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
-                                        </a>
-                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
                                             <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
-                                        </a>
-                                        <a v-if="request.status_value === 'completed' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                        </Link>
+                                        <Link v-if="request.status_value === 'completed' && request.service_value === 'training-services'" :href="'/admin/requests/' + request.id + '/training-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
                                             <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
-                                        </a>
+                                        </Link>
                                     </div>
                                 </td>
                             </tr>

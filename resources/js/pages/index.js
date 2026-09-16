@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { defineComponent, onMounted } from 'vue';
@@ -6,7 +6,7 @@ import PrivacyNoticeCard from '../components/PrivacyNoticeCard';
 
 export default defineComponent({
     name: 'Index',
-    components: { Head, PrivacyNoticeCard },
+    components: { Head, Link, PrivacyNoticeCard },
     setup() {
         onMounted(() => {
             AOS.init({ duration: 600, once: true });
@@ -26,7 +26,7 @@ export default defineComponent({
                     <h2 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">How would you like to continue?</h2>
                     <p class="mt-3 text-base text-slate-600">Choose the option that best fits your visit.</p>
                     <div class="mt-8 grid gap-5 md:grid-cols-2">
-                    <a
+                    <Link
                         href="/walk-in"
                         data-aos="fade-up"
                         class="group flex min-h-80 flex-col items-center rounded-3xl border border-[#c8e0f4] bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:border-[#0d5ba6] hover:shadow-xl focus-visible:ring-4 focus-visible:ring-[#bfe5ff] focus-visible:outline-none"
@@ -35,9 +35,9 @@ export default defineComponent({
                         <h2 class="mt-6 text-2xl font-semibold text-slate-900 uppercase">Walk In</h2>
                         <p class="mt-2 text-slate-600">Visit us today without scheduling ahead.</p>
                         <span class="mt-6 font-semibold text-[#07559e] group-hover:text-[#043d78]">Continue <span aria-hidden="true">→</span></span>
-                    </a>
+                    </Link>
 
-                    <a
+                    <Link
                         href="/book-an-appointment"
                         data-aos="fade-up"
                         data-aos-delay="100"
@@ -47,7 +47,7 @@ export default defineComponent({
                         <h2 class="mt-6 text-2xl font-semibold text-slate-900 uppercase">Book Appointment</h2>
                         <p class="mt-2 text-slate-600">Reserve a date and time that works for you.</p>
                         <span class="mt-6 font-semibold text-[#07559e] group-hover:text-[#043d78]">Continue <span aria-hidden="true">→</span></span>
-                    </a>
+                    </Link>
 
                     <a
                         href="https://www.lbp-eservices.com/egps/portal/index.jsp"

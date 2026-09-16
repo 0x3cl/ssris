@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, defineComponent, ref } from 'vue';
 import AdminShell from '../../components/AdminShell';
 import AttachmentCard from '../../components/AttachmentCard';
@@ -11,7 +11,7 @@ const LOGS_PER_PAGE = 5;
 
 export default defineComponent({
     name: 'AdminLabFeedbackForm',
-    components: { AttachmentCard, AdminShell, ConfirmActionModal, Head },
+    components: { AttachmentCard, AdminShell, ConfirmActionModal, Head, Link },
     props: {
         serviceRequest: { type: Object, required: true },
         labRequest: { type: Object, required: true },
@@ -88,9 +88,9 @@ export default defineComponent({
                         </div>
                         <p class="mt-1 text-slate-600">{{ isCompleted ? 'View the request, payment, and client feedback.' : 'Review the request, payment, and client feedback.' }}</p>
                     </div>
-                    <a href="/admin/requests" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                    <Link href="/admin/requests" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Back to requests
-                    </a>
+                    </Link>
                 </div>
 
                 <div class="mt-7 flex flex-wrap gap-2 border-b border-slate-200">
@@ -248,9 +248,9 @@ export default defineComponent({
                                             {{ link.is_submitted ? 'Submitted' : (link.is_expired ? 'Expired' : 'Valid until ' + link.expires_at) }}
                                         </p>
                                     </div>
-                                    <a v-if="link.response_url" :href="link.response_url" class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-emerald-700 hover:bg-emerald-100">
+                                    <Link v-if="link.response_url" :href="link.response_url" class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-emerald-700 hover:bg-emerald-100">
                                         <i class="fa-solid fa-eye" aria-hidden="true"></i>View response
-                                    </a>
+                                    </Link>
                                 </li>
                             </ul>
                         </div>

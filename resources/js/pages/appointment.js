@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { computed, defineComponent, nextTick, onMounted, reactive, ref, watch } from 'vue';
@@ -86,7 +86,7 @@ const withIllustrations = (choices, offset = 0) => choices.map((choice, index) =
 
 export default defineComponent({
     name: 'Appointment',
-    components: { ClientTypeModal, EmailLookupModal, FeedbackModal, Head, IllustratedChoiceModal, LoadingModal, PrivacyNoticeCard, ServiceCard, SourceModal, TermsConditionsModal, AppointmentStepper },
+    components: { ClientTypeModal, EmailLookupModal, FeedbackModal, Head, IllustratedChoiceModal, Link, LoadingModal, PrivacyNoticeCard, ServiceCard, SourceModal, TermsConditionsModal, AppointmentStepper },
     props: {
         selectedService: {
             type: String,
@@ -610,9 +610,9 @@ export default defineComponent({
         <main class="min-h-screen bg-white px-4 py-8 sm:px-6 sm:py-12">
             <section class="mx-auto w-full max-w-6xl">
                 <header class="flex items-center gap-4 border-b border-slate-200/80 pb-5">
-                    <a href="/" class="flex h-9 w-9 items-center justify-center rounded-full text-xl text-slate-500 transition hover:bg-white hover:text-[#008dcc]" aria-label="Back to service options">
+                    <Link href="/" class="flex h-9 w-9 items-center justify-center rounded-full text-xl text-slate-500 transition hover:bg-white hover:text-[#008dcc]" aria-label="Back to service options">
                         ←
-                    </a>
+                    </Link>
                     <div><h1 class="font-semibold text-slate-900">Appointment request</h1><p class="text-xs text-[#3d68b1]">Complete the steps below</p></div>
                 </header>
                 <div class="mx-auto mt-10 w-full py-5 sm:py-8">
@@ -638,9 +638,9 @@ export default defineComponent({
                                 </label>
                             </div>
                             <div class="mt-auto flex items-center justify-between gap-3 pt-8">
-                                <a href="/" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50">
+                                <Link href="/" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50">
                                     <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Go back
-                                </a>
+                                </Link>
                                 <button type="submit" :disabled="isValidatingBooking" class="inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc] disabled:cursor-not-allowed disabled:bg-slate-400">
                                     {{ isValidatingBooking ? 'Validating…' : 'Next' }}<i v-if="!isValidatingBooking" class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                                 </button>

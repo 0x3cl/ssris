@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { defineComponent, onBeforeUnmount, reactive } from 'vue';
 import CodeConfirmationModal from '../../components/CodeConfirmationModal';
 import AdminShell from '../../components/AdminShell';
@@ -7,7 +7,7 @@ import AdminPagination from '../../components/AdminPagination';
 
 export default defineComponent({
     name: 'AdminClients',
-    components: { CodeConfirmationModal, Head, AdminShell, AdminIndexControls, AdminPagination },
+    components: { CodeConfirmationModal, Head, AdminShell, AdminIndexControls, AdminPagination, Link },
     props: {
         clients: { type: Object, required: true },
         filters: { type: Object, required: true },
@@ -71,9 +71,9 @@ export default defineComponent({
                                 <td class="px-4 py-4">{{ client.type || '—' }}</td>
                                 <td class="px-4 py-4">{{ client.organization || '—' }}</td>
                                 <td class="px-4 py-4 text-right">
-                                    <a :href="client.requests_url" :aria-label="'View requests for ' + client.fullname" class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold text-[#07559e] hover:bg-sky-100">
+                                    <Link :href="client.requests_url" :aria-label="'View requests for ' + client.fullname" class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold text-[#07559e] hover:bg-sky-100">
                                         <i class="fa-solid fa-folder-open" aria-hidden="true"></i>View requests
-                                    </a>
+                                    </Link>
                                     <button type="button" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-bold hover:bg-slate-100" :class="client.archived ? 'text-emerald-700' : 'text-amber-700'" @click="action.client = client">
                                         <i :class="client.archived ? 'fa-solid fa-rotate-left' : 'fa-solid fa-box-archive'" aria-hidden="true"></i>{{ client.archived ? 'Restore' : 'Archive' }}
                                     </button>

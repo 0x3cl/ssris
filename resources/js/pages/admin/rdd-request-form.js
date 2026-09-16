@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, defineComponent, reactive, ref } from 'vue';
 import AdminShell from '../../components/AdminShell';
 import ConfirmActionModal from '../../components/ConfirmActionModal';
@@ -18,7 +18,7 @@ const peso = (amount) => currencyFormatter.format(Number(amount) || 0);
 
 export default defineComponent({
     name: 'AdminRddRequestForm',
-    components: { AdminShell, ConfirmActionModal, Head },
+    components: { AdminShell, ConfirmActionModal, Head, Link },
     props: { serviceRequest: { type: Object, required: true } },
     setup(props) {
         const currentStep = ref(1);
@@ -158,9 +158,9 @@ export default defineComponent({
                         <h2 class="mt-1 text-2xl font-bold text-slate-900">Service request #{{ serviceRequest.id }} &middot; {{ serviceRequest.service }}</h2>
                         <p class="mt-1 text-slate-600">{{ currentStep === 1 ? 'Fill out the receiving officer details, then review before submitting.' : 'Review everything below, then submit.' }}</p>
                     </div>
-                    <a href="/admin/requests" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                    <Link href="/admin/requests" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Back to requests
-                    </a>
+                    </Link>
                 </div>
 
                 <template v-if="currentStep === 1">

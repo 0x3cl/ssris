@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { computed, defineComponent, nextTick, onMounted, reactive, ref, watch } from 'vue';
@@ -76,7 +76,7 @@ const withIllustrations = (choices, offset = 0) => choices.map((choice, index) =
 
 export default defineComponent({
     name: 'WalkIn',
-    components: { ClientTypeModal, EmailLookupModal, FeedbackModal, Head, IllustratedChoiceModal, LoadingModal, PrivacyNoticeCard, ServiceCard, SourceModal, TermsConditionsModal, WalkInStepper },
+    components: { ClientTypeModal, EmailLookupModal, FeedbackModal, Head, IllustratedChoiceModal, Link, LoadingModal, PrivacyNoticeCard, ServiceCard, SourceModal, TermsConditionsModal, WalkInStepper },
     props: {
         selectedService: {
             type: String,
@@ -547,9 +547,9 @@ export default defineComponent({
         <main class="min-h-screen bg-white px-4 py-8 sm:px-6 sm:py-12">
             <section class="mx-auto w-full max-w-6xl">
                 <header class="flex items-center gap-4 border-b border-slate-200/80 pb-5">
-                    <a href="/" class="flex h-9 w-9 items-center justify-center rounded-full text-xl text-slate-500 transition hover:bg-white hover:text-[#008dcc]" aria-label="Back to service options">
+                    <Link href="/" class="flex h-9 w-9 items-center justify-center rounded-full text-xl text-slate-500 transition hover:bg-white hover:text-[#008dcc]" aria-label="Back to service options">
                         ←
-                    </a>
+                    </Link>
                     <div><h1 class="font-semibold text-slate-900">Walk-in service request</h1><p class="text-xs text-[#3d68b1]">Complete the steps below</p></div>
                 </header>
                 <div class="mx-auto mt-10 w-full py-5 sm:py-8">

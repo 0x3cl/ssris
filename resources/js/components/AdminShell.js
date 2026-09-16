@@ -1,11 +1,11 @@
-import { usePage, router } from '@inertiajs/vue3';
+import { Link, usePage, router } from '@inertiajs/vue3';
 import { defineComponent, ref, watch } from 'vue';
 import FeedbackModal from './FeedbackModal';
 
 export default defineComponent({
     name: 'AdminShell',
     props: { active: { type: String, required: true }, title: { type: String, required: true } },
-    components: { FeedbackModal },
+    components: { FeedbackModal, Link },
     setup() {
         const logout = () => router.post('/admin/logout');
         const page = usePage();
@@ -49,7 +49,7 @@ export default defineComponent({
                         </button>
                         <div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-[#07559e]">Administration</p><h1 class="mt-1 text-2xl font-semibold text-slate-900">{{ title }}</h1></div>
                     </div>
-                    <div class="flex items-center gap-4"><a href="/" class="text-sm font-semibold text-[#07559e] transition hover:text-[#043d78]"><i class="fa-solid fa-house mr-2" aria-hidden="true"></i>Public site</a><button type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#07559e] hover:text-[#07559e]" @click="logout"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>Sign out</button></div>
+                    <div class="flex items-center gap-4"><Link href="/" class="text-sm font-semibold text-[#07559e] transition hover:text-[#043d78]"><i class="fa-solid fa-house mr-2" aria-hidden="true"></i>Public site</Link><button type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#07559e] hover:text-[#07559e]" @click="logout"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>Sign out</button></div>
                 </header>
                 <div class="mt-8 grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" @click="sidebarOpen = false"></div>
@@ -62,7 +62,7 @@ export default defineComponent({
                             <button type="button" class="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close modules menu" @click="sidebarOpen = false">×</button>
                         </div>
                         <p class="hidden px-3 pb-3 pt-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 lg:block">Modules</p>
-                        <nav class="space-y-1" aria-label="Admin modules"><a v-for="module in modules" :key="module.key" :href="module.href" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition" :class="active === module.key ? 'bg-sky-100 text-[#07559e]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" @click="sidebarOpen = false"><i :class="module.icon" class="w-4 text-center" aria-hidden="true"></i>{{ module.label }}</a></nav>
+                        <nav class="space-y-1" aria-label="Admin modules"><Link v-for="module in modules" :key="module.key" :href="module.href" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition" :class="active === module.key ? 'bg-sky-100 text-[#07559e]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" @click="sidebarOpen = false"><i :class="module.icon" class="w-4 text-center" aria-hidden="true"></i>{{ module.label }}</Link></nav>
                     </aside>
                     <div class="min-w-0"><slot /></div>
                 </div>

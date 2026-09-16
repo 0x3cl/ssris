@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, defineComponent, reactive, ref } from 'vue';
 import AdminShell from '../../components/AdminShell';
 import ConfirmActionModal from '../../components/ConfirmActionModal';
@@ -10,7 +10,7 @@ const peso = (amount) => currencyFormatter.format(Number(amount) || 0);
 
 export default defineComponent({
     name: 'AdminRddPaymentForm',
-    components: { AdminShell, ConfirmActionModal, CodeConfirmationModal, Head },
+    components: { AdminShell, ConfirmActionModal, CodeConfirmationModal, Head, Link },
     props: { serviceRequest: { type: Object, required: true }, rddRequest: { type: Object, required: true } },
     setup(props) {
         const activeTab = useQueryTab(['service-request', 'payment-verification'], 'service-request');
@@ -104,9 +104,9 @@ export default defineComponent({
                         <h2 class="mt-1 text-2xl font-bold text-slate-900">Service request #{{ serviceRequest.id }} &middot; {{ rddRequest.reference_no }}</h2>
                         <p class="mt-1 text-slate-600">Review the request, then verify the payment details.</p>
                     </div>
-                    <a href="/admin/requests" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                    <Link href="/admin/requests" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Back to requests
-                    </a>
+                    </Link>
                 </div>
 
                 <div class="mt-7 flex flex-wrap gap-2 border-b border-slate-200">
