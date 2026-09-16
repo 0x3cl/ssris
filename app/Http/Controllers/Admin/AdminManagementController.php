@@ -32,7 +32,7 @@ class AdminManagementController extends Controller
 {
     public const MODULES = ['dashboard', 'clients', 'requests', 'site-visitors', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'feedback-builder', 'smtp-configuration', 'ulims-configuration', 'audit-trails'];
 
-    public const READ_ONLY_MODULES = ['audit-trails'];
+    public const READ_ONLY_MODULES = ['audit-trails', 'reports'];
 
     public function dashboard(Request $request): Response
     {

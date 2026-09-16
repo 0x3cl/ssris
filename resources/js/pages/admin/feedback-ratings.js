@@ -59,6 +59,7 @@ export default defineComponent({
                             <tr>
                                 <th class="px-4 py-4">Value</th>
                                 <th class="px-4 py-4">Name</th>
+                                <th class="px-4 py-4">Weight</th>
                                 <th class="px-4 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -66,13 +67,14 @@ export default defineComponent({
                             <tr v-for="rating in ratings.data" :key="rating.id" class="border-b border-slate-100 hover:bg-sky-50/50">
                                 <td class="px-4 py-4 font-mono text-sm font-bold text-slate-900">{{ rating.value }}</td>
                                 <td class="px-4 py-4 text-sm text-slate-700">{{ rating.name }}</td>
+                                <td class="px-4 py-4 text-sm text-slate-700">{{ rating.weight ?? '—' }}</td>
                                 <td class="px-4 py-4 text-right">
                                     <a :href="'/admin/feedback-builder/ratings/' + rating.id + '/edit'" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-[#07559e] hover:bg-sky-100"><i class="fa-solid fa-pen" aria-hidden="true"></i>Edit</a>
                                     <button type="button" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50" @click="remove(rating)"><i class="fa-solid fa-trash" aria-hidden="true"></i>Delete</button>
                                 </td>
                             </tr>
                             <tr v-if="ratings.data.length === 0">
-                                <td colspan="3" class="px-4 py-12 text-center text-slate-500">No rating options yet.</td>
+                                <td colspan="4" class="px-4 py-12 text-center text-slate-500">No rating options yet.</td>
                             </tr>
                         </tbody>
                     </table>

@@ -12,7 +12,6 @@ class AdminModuleController extends Controller
     {
         $modules = [
             'dashboard' => 'Dashboard',
-            'reports' => 'Reports',
             'users' => 'Users',
             'roles-and-permissions' => 'Roles and Permissions',
             'smtp-configuration' => 'SMTP Configuration',

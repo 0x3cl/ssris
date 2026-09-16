@@ -9,9 +9,17 @@ use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
-#[Fillable(['name', 'value'])]
+#[Fillable(['name', 'value', 'weight'])]
 class FeedbackRating extends Model implements Auditable
 {
     /** @use HasFactory<FeedbackRatingFactory> */
     use AuditableTrait, HasFactory;
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'weight' => 'float',
+        ];
+    }
 }

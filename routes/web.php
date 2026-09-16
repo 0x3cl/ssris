@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\FormTemplateController;
 use App\Http\Controllers\Admin\LabRequestController;
 use App\Http\Controllers\Admin\ProcessingRequestController;
 use App\Http\Controllers\Admin\RddRequestController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ServiceRequestController;
 use App\Http\Controllers\Admin\SiteVisitorController;
 use App\Http\Controllers\Admin\TrainingRequestController;
@@ -58,6 +59,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('clients/{client}/restore', [ClientController::class, 'restore'])->name('clients.restore');
         Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
         Route::get('site-visitors', [SiteVisitorController::class, 'index'])->name('site-visitors');
+        Route::get('reports', [ReportController::class, 'index'])->name('reports');
         Route::get('requests', [ServiceRequestController::class, 'index'])->name('requests.index');
         Route::get('requests/{serviceRequest}/logs', [ServiceRequestController::class, 'logs'])->name('requests.logs');
         Route::patch('requests/{serviceRequest}/proceed', [ServiceRequestController::class, 'proceed'])->name('requests.proceed');

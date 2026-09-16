@@ -66,4 +66,29 @@ class Client extends Model implements Auditable
             'service' => ClientService::class,
         ];
     }
+
+    public static function ageBracket(?int $age): ?string
+    {
+        return match (true) {
+            $age === null => null,
+            $age <= 20 => 'less than 20 yrs old',
+            $age <= 30 => '21-30 yrs old',
+            $age <= 50 => '31-50 yrs old',
+            $age <= 59 => '51-59 yrs old',
+            default => '60 yrs old and above',
+        };
+    }
+
+    /** @return array{0: int, 1: ?int} The inclusive [min, max] age range for a bracket label, max null meaning unbounded. */
+    public static function ageBracketRange(string $bracket): ?array
+    {
+        return match ($bracket) {
+            'less than 20 yrs old' => [0, 20],
+            '21-30 yrs old' => [21, 30],
+            '31-50 yrs old' => [31, 50],
+            '51-59 yrs old' => [51, 59],
+            '60 yrs old and above' => [60, null],
+            default => null,
+        };
+    }
 }

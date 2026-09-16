@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ServiceRequestLogAction;
 use App\Enums\ServiceRequestStatus;
+use App\Models\Client;
 use App\Models\FeedbackDimension;
 use App\Models\FeedbackItem;
 use App\Models\FeedbackLink;
@@ -133,21 +134,14 @@ class FeedbackController extends Controller
                     'description' => $item->description,
                 ])->all(),
             ])->all(),
-            'ratings' => FeedbackRating::query()->orderBy('id')->get(['id', 'name', 'value'])->toArray(),
+            'ratings' => FeedbackRating::query()->orderBy('id')->get(['id', 'name', 'value', 'weight'])->toArray(),
             'questions' => FeedbackQuestion::query()->orderBy('id')->get(['id', 'name'])->toArray(),
         ];
     }
 
     private function ageBracket(?int $age): ?string
     {
-        return match (true) {
-            $age === null => null,
-            $age <= 20 => 'less than 20 yrs old',
-            $age <= 30 => '21-30 yrs old',
-            $age <= 50 => '31-50 yrs old',
-            $age <= 59 => '51-59 yrs old',
-            default => '60 yrs old and above',
-        };
+        return Client::ageBracket($age);
     }
 
     private function unavailable(?FeedbackLink $link): Response

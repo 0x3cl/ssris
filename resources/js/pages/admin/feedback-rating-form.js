@@ -8,7 +8,7 @@ export default defineComponent({
     props: { rating: { type: Object, default: null } },
     setup(props) {
         const isEditing = computed(() => Boolean(props.rating));
-        const form = useForm({ name: props.rating?.name ?? '', value: props.rating?.value ?? '' });
+        const form = useForm({ name: props.rating?.name ?? '', value: props.rating?.value ?? '', weight: props.rating?.weight ?? '' });
         const save = () => {
             if (isEditing.value) {
                 form.put(`/admin/feedback-builder/ratings/${props.rating.id}`);
@@ -43,6 +43,12 @@ export default defineComponent({
                         <span class="required-label text-sm font-semibold text-slate-700">Name</span>
                         <input v-model="form.name" placeholder="e.g. Excellent or Not Applicable" class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-[#00aeef] focus:ring-4 focus:ring-sky-100" :class="{ 'border-rose-500': form.errors.name }" />
                         <p v-if="form.errors.name" class="mt-1 text-sm text-rose-600">{{ form.errors.name }}</p>
+                    </label>
+                    <label class="block sm:col-span-2">
+                        <span class="text-sm font-semibold text-slate-700">Weight</span>
+                        <input v-model="form.weight" type="number" step="0.01" placeholder="e.g. 5" class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-[#00aeef] focus:ring-4 focus:ring-sky-100 sm:w-1/2" :class="{ 'border-rose-500': form.errors.weight }" />
+                        <p class="mt-1 text-sm text-slate-500">The numeric score this option contributes to feedback report averages. Leave blank for non-scoring options like N/A.</p>
+                        <p v-if="form.errors.weight" class="mt-1 text-sm text-rose-600">{{ form.errors.weight }}</p>
                     </label>
                     <div class="mt-2 flex justify-end gap-3 border-t border-slate-200 pt-5 sm:col-span-2">
                         <a href="/admin/feedback-builder/ratings" class="rounded-lg border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">Cancel</a>

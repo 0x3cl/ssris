@@ -34,7 +34,7 @@ class FeedbackRatingController extends Controller
     public function edit(FeedbackRating $feedbackRating): Response
     {
         return Inertia::render('admin/feedback-rating-form', [
-            'rating' => ['id' => $feedbackRating->id, 'name' => $feedbackRating->name, 'value' => $feedbackRating->value],
+            'rating' => ['id' => $feedbackRating->id, 'name' => $feedbackRating->name, 'value' => $feedbackRating->value, 'weight' => $feedbackRating->weight],
         ]);
     }
 
