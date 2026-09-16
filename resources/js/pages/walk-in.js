@@ -4,6 +4,8 @@ import ClientTypeModal from '../components/ClientTypeModal';
 import EmailLookupModal from '../components/EmailLookupModal';
 import FeedbackModal from '../components/FeedbackModal';
 import IllustratedChoiceModal from '../components/IllustratedChoiceModal';
+import LoadingModal from '../components/LoadingModal';
+import PrivacyNoticeCard from '../components/PrivacyNoticeCard';
 import ServiceCard from '../components/ServiceCard';
 import SourceModal from '../components/SourceModal';
 import TermsConditionsModal from '../components/TermsConditionsModal';
@@ -80,7 +82,7 @@ const withIllustrations = (choices, offset = 0) => choices.map((choice, index) =
 
 export default defineComponent({
     name: 'WalkIn',
-    components: { ClientTypeModal, EmailLookupModal, FeedbackModal, Head, IllustratedChoiceModal, ServiceCard, SourceModal, TermsConditionsModal, WalkInStepper },
+    components: { ClientTypeModal, EmailLookupModal, FeedbackModal, Head, IllustratedChoiceModal, LoadingModal, PrivacyNoticeCard, ServiceCard, SourceModal, TermsConditionsModal, WalkInStepper },
     props: {
         selectedService: {
             type: String,
@@ -133,6 +135,7 @@ export default defineComponent({
         const submissionErrorMessage = ref('');
         const activeChoice = ref(null);
         const formErrors = ref({});
+        const isSubmitting = ref(false);
         const isValidatingDetails = ref(false);
         const returningClient = ref(false);
         const hasSelectedService = computed(() => Boolean(selectedService.value));
@@ -287,11 +290,17 @@ export default defineComponent({
             displayFieldErrors({});
 
             router.post('/walk-in', form, {
+                onStart: () => {
+                    isSubmitting.value = true;
+                },
                 onError: (errors) => {
                     formErrors.value = errors;
                 currentStep.value = 2;
                 markClientRequiredFields();
                     displayFieldErrors(errors);
+                },
+                onFinish: () => {
+                    isSubmitting.value = false;
                 },
             });
         };
@@ -348,6 +357,7 @@ export default defineComponent({
             isBusiness,
             isPrivateCompany,
             isLookingUp,
+            isSubmitting,
             isValidatingDetails,
             lookupError,
             openEmailModal,
@@ -707,6 +717,7 @@ export default defineComponent({
             <SourceModal :illustrations="sourceIllustrations" :open="showSourceModal" :sources="sources" @close="showSourceModal = false" @select="selectSource" />
             <IllustratedChoiceModal :choices="activeChoice ? choiceConfig[activeChoice].choices : []" :open="Boolean(activeChoice)" :title="activeChoice ? choiceConfig[activeChoice].title : ''" @close="activeChoice = null" @select="selectChoice" />
             <TermsConditionsModal :open="showTermsModal" @close="showTermsModal = false" @confirm="confirmTermsAndSubmit" />
+            <LoadingModal :open="isSubmitting" message="Submitting your walk-in request. This will only take a moment." />
             <FeedbackModal
                 :open="showSubmissionSuccessModal"
                 title="Request submitted"
@@ -725,6 +736,7 @@ export default defineComponent({
                 close-label="Close"
                 @close="showSubmissionErrorModal = false"
             />
+            <PrivacyNoticeCard />
         </main>
 `,
 });

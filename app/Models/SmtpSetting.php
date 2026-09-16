@@ -8,6 +8,8 @@ class SmtpSetting extends Model
 {
     protected $guarded = [];
 
+    protected $hidden = ['password'];
+
     /** @return array<string, string> */
     protected function casts(): array
     {

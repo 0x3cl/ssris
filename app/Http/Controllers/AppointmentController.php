@@ -8,9 +8,14 @@ use App\Enums\ClientMarket;
 use App\Enums\ClientService;
 use App\Enums\ClientSource;
 use App\Enums\ClientType;
+use App\Enums\FormTemplateKey;
+use App\Enums\ServiceRequestLogAction;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Client;
+use App\Models\ServiceRequest;
 use App\Services\ClientService as ClientServiceManager;
+use App\Services\FormTemplateMailer;
+use App\Services\ServiceRequestLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +25,11 @@ use Inertia\Response;
 
 class AppointmentController extends Controller
 {
+    public function __construct(
+        private readonly FormTemplateMailer $formTemplateMailer,
+        private readonly ServiceRequestLogger $serviceRequestLogger,
+    ) {}
+
     public function index(): Response
     {
         return Inertia::render('appointment', [
@@ -45,7 +55,7 @@ class AppointmentController extends Controller
     public function findClient(Request $request): JsonResponse
     {
         $validated = $request->validate(['email' => ['required', 'email']]);
-        $client = Client::query()->where('email', $validated['email'])->where('is_deleted', false)->first();
+        $client = Client::withTrashed()->where('email', $validated['email'])->first();
 
         return response()->json(['client' => $client?->only([
             'firstname', 'middlename', 'lastname', 'fullname', 'email', 'mobile_no', 'fax_no', 'age', 'gender',
@@ -66,25 +76,58 @@ class AppointmentController extends Controller
         $data = $request->validated();
         $data['fullname'] = trim($data['firstname'].' '.$data['lastname']);
 
-        DB::transaction(function () use ($clientService, $data): void {
-            $existingClient = Client::query()->firstWhere('email', $data['email']);
+        $serviceRequest = DB::transaction(function () use ($clientService, $data): ServiceRequest {
+            $existingClient = Client::withTrashed()->firstWhere('email', $data['email']);
             $client = $existingClient
-                ? $clientService->update($existingClient->id, $data)
+                ? $clientService->updateReturningClient($existingClient, $data)
                 : $clientService->create($data);
 
-            DB::table('service_requests')->insert([
+            return ServiceRequest::create([
                 'service' => $data['service'],
                 'is_appointment' => true,
                 'client_id' => $client->id,
                 'appointment_date' => $data['appointment_date'],
                 'appointment_time' => $data['appointment_time'],
                 'description' => $data['description'],
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
         });
 
-        return to_route('appointment')->with('success', 'Your appointment request has been submitted.');
+        $this->serviceRequestLogger->log(
+            $serviceRequest,
+            ServiceRequestLogAction::Scheduled,
+            "Appointment request submitted by the client for {$data['appointment_date']} {$data['appointment_time']}.",
+            $data['fullname'],
+        );
+
+        $emailQueued = $this->sendAcknowledgementEmail($serviceRequest, $data);
+
+        $message = $emailQueued
+            ? 'Your appointment request has been submitted and a confirmation email has been queued.'
+            : 'Your appointment request has been submitted, but the email could not be queued.';
+
+        return to_route('appointment')->with('success', $message);
+    }
+
+    /** @param  array{email: string, fullname: string, mobile_no: string, service: string}  $data */
+    private function sendAcknowledgementEmail(ServiceRequest $serviceRequest, array $data): bool
+    {
+        $error = $this->formTemplateMailer->send(FormTemplateKey::ServiceRequestReceipt, $data['email'], [
+            'service' => ClientService::from($data['service'])->label(),
+            'client_email' => $data['email'],
+            'client_name' => $data['fullname'],
+            'mobile_number' => $data['mobile_no'],
+        ], $serviceRequest);
+
+        $this->serviceRequestLogger->log(
+            $serviceRequest,
+            $error === null ? ServiceRequestLogAction::EmailQueued : ServiceRequestLogAction::EmailFailed,
+            $error === null
+                ? 'Service request acknowledgement email queued for delivery to the client.'
+                : "Service request acknowledgement email could not be queued: {$error}",
+            'System',
+        );
+
+        return $error === null;
     }
 
     /**

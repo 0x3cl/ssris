@@ -67,7 +67,9 @@ export default defineComponent({
                     ],
                 },
             });
-            quill.root.innerHTML = props.modelValue ?? '';
+            applyingExternalValue = true;
+            quill.clipboard.dangerouslyPasteHTML(props.modelValue ?? '');
+            applyingExternalValue = false;
             quill.on('text-change', () => {
                 if (applyingExternalValue) {
                     return;
@@ -83,7 +85,7 @@ export default defineComponent({
                 return;
             }
             applyingExternalValue = true;
-            quill.root.innerHTML = value ?? '';
+            quill.clipboard.dangerouslyPasteHTML(value ?? '');
             applyingExternalValue = false;
         });
 

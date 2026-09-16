@@ -11,7 +11,7 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $permissions = collect(['dashboard', 'requests', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'smtp-configuration'])
+        $permissions = collect(['dashboard', 'clients', 'requests', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'feedback-builder', 'smtp-configuration', 'ulims-configuration'])
             ->flatMap(fn (string $module) => ["{$module}.read", "{$module}.write"])
             ->map(fn (string $permission) => Permission::findOrCreate($permission));
         $role = Role::findOrCreate('superadmin');

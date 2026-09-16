@@ -1,5 +1,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { computed, defineComponent, onBeforeUnmount, reactive, ref } from 'vue';
+import AdminIndexControls from '../../components/AdminIndexControls';
+import AdminPagination from '../../components/AdminPagination';
 import AdminShell from '../../components/AdminShell';
 import AppointmentConfirmModal from '../../components/AppointmentConfirmModal';
 import CodeConfirmationModal from '../../components/CodeConfirmationModal';
@@ -11,8 +13,8 @@ const needsAppointmentConfirmation = (request) => request.type === 'appointment'
 
 export default defineComponent({
     name: 'AdminRequests',
-    components: { AdminShell, AppointmentConfirmModal, CodeConfirmationModal, ConfirmActionModal, Head, RequestDetailsModal },
-    props: { filters: { type: Object, required: true }, requests: { type: Object, required: true }, statuses: { type: Array, required: true } },
+    components: { AdminIndexControls, AdminPagination, AdminShell, AppointmentConfirmModal, CodeConfirmationModal, ConfirmActionModal, Head, RequestDetailsModal },
+    props: { filters: { type: Object, required: true }, requests: { type: Object, required: true }, statuses: { type: Array, required: true }, services: { type: Array, required: true } },
     setup(props) {
         const filters = reactive({ ...props.filters });
         const selectedRequest = ref(null);
@@ -26,8 +28,25 @@ export default defineComponent({
             clearTimeout(searchTimer);
             searchTimer = setTimeout(load, 350);
         };
+        const logsCache = new Map();
         const open = (request) => {
-            selectedRequest.value = request;
+            selectedRequest.value = { ...request, logs: logsCache.get(request.id) ?? null };
+
+            if (logsCache.has(request.id)) return;
+
+            fetch(`/admin/requests/${request.id}/logs`, { headers: { Accept: 'application/json' } })
+                .then((response) => response.json())
+                .then((data) => {
+                    logsCache.set(request.id, data.logs);
+                    if (selectedRequest.value?.id === request.id) {
+                        selectedRequest.value = { ...selectedRequest.value, logs: data.logs };
+                    }
+                })
+                .catch(() => {
+                    if (selectedRequest.value?.id === request.id) {
+                        selectedRequest.value = { ...selectedRequest.value, logs: [] };
+                    }
+                });
         };
         const page = (url) => {
             if (url) router.get(url, {}, { preserveScroll: true });
@@ -42,6 +61,18 @@ export default defineComponent({
 
             if (request.service_value === 'rnd-services') {
                 router.get(`/admin/requests/${request.id}/rdd-request`);
+
+                return;
+            }
+
+            if (request.service_value === 'processing-services') {
+                router.get(`/admin/requests/${request.id}/processing-request`);
+
+                return;
+            }
+
+            if (request.service_value === 'lab-services') {
+                router.get(`/admin/requests/${request.id}/lab-request`);
 
                 return;
             }
@@ -98,8 +129,8 @@ export default defineComponent({
                 ? `/admin/requests/${request.id}/cancel-appointment`
                 : `/admin/requests/${request.id}/approve-appointment`;
             const data = action.type === 'cancel'
-                ? { confirmation_code: code }
-                : { reschedule: action.reschedule, appointment_date: action.appointment_date, appointment_time: action.appointment_time, confirmation_code: code };
+                ? { reason: action.reason, confirmation_code: code }
+                : { reschedule: action.reschedule, appointment_date: action.appointment_date, appointment_time: action.appointment_time, reason: action.reason, confirmation_code: code };
 
             confirmingAppointment.processing = true;
             router.patch(url, data, {
@@ -143,38 +174,34 @@ export default defineComponent({
         <Head title="Service requests" />
         <AdminShell active="requests" title="Service Requests">
             <section class="border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                <div class="flex flex-wrap items-end justify-between gap-5">
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#07559e]">Requests module</p>
-                        <h2 class="mt-1 text-2xl font-bold text-slate-900">All service requests</h2>
-                        <p class="mt-1 text-slate-600">Search and filter only the entries you need.</p>
-                    </div>
-                    <label class="text-sm font-semibold text-slate-700">
-                        Entries
-                        <select v-model="filters.entries" class="ml-2 rounded-lg border border-slate-300 px-3 py-2" @change="load">
-                            <option :value="10">10</option>
-                            <option :value="25">25</option>
-                            <option :value="50">50</option>
-                        </select>
-                    </label>
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#07559e]">Requests module</p>
+                    <h2 class="mt-1 text-2xl font-bold text-slate-900">All service requests</h2>
+                    <p class="mt-1 text-slate-600">Search and filter only the entries you need.</p>
                 </div>
-                <div class="mt-7 flex flex-wrap gap-2 border-b border-slate-200">
+                <div class="mt-7">
+                    <AdminIndexControls v-model:entries="filters.entries" v-model:search="filters.search" search-placeholder="Search client, email, service, or description" @search="search" />
+                </div>
+                <div class="mt-5 flex flex-wrap gap-2 border-b border-slate-200">
                     <button v-for="tab in [{ value: '', label: 'All requests' }, { value: 'walk-in', label: 'Walk-in' }, { value: 'appointment', label: 'Appointment' }]" :key="tab.value" type="button" class="border-b-2 px-4 py-3 text-sm font-bold transition" :class="filters.type === tab.value ? 'border-[#00aeef] text-[#07559e]' : 'border-transparent text-slate-500 hover:text-slate-900'" @click="filters.type = tab.value; load()">
                         {{ tab.label }}
                     </button>
                 </div>
-                <div class="mt-6 grid gap-4 lg:grid-cols-[1fr_220px]">
-                    <label>
-                        <span class="sr-only">Search requests</span>
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"></i>
-                            <input v-model="filters.search" class="w-full rounded-xl border border-slate-300 py-3 pl-11 pr-4 outline-none focus:border-[#00aeef] focus:ring-4 focus:ring-sky-100" placeholder="Search client, email, service, or description" @input="search" />
-                        </div>
-                    </label>
+                <div class="mt-6 grid gap-4 sm:grid-cols-3">
+                    <select v-model="filters.service" class="rounded-xl border border-slate-300 px-4 py-3 text-slate-700" @change="load">
+                        <option value="">All services</option>
+                        <option v-for="service in services" :key="service.value" :value="service.value">{{ service.label }}</option>
+                    </select>
                     <select v-model="filters.status" class="rounded-xl border border-slate-300 px-4 py-3 text-slate-700" @change="load">
                         <option value="">All statuses</option>
                         <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
                     </select>
+                    <div class="relative">
+                        <input v-model="filters.date" type="date" class="w-full rounded-xl border border-slate-300 py-3 pl-4 pr-4 text-slate-700" @change="load" />
+                        <button v-if="filters.date" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="Clear date filter" @click="filters.date = ''; load()">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="mt-6 overflow-x-auto">
                     <table class="w-full min-w-[900px] text-left">
@@ -216,11 +243,32 @@ export default defineComponent({
                                         <button v-if="request.status_value === 'pending'" type="button" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50" @click="proceed(request)">
                                             <i :class="needsAppointmentConfirmation(request) ? 'fa-solid fa-bolt' : 'fa-solid fa-arrow-right'" aria-hidden="true"></i>{{ needsAppointmentConfirmation(request) ? 'Take Action' : 'Proceed' }}
                                         </button>
-                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/payment'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
                                             <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
                                         </a>
-                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
                                             <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
+                                        </a>
+                                        <a v-if="request.status_value === 'completed' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
+                                        </a>
+                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                                            <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
+                                        </a>
+                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
+                                        </a>
+                                        <a v-if="request.status_value === 'completed' && request.service_value === 'processing-services'" :href="'/admin/requests/' + request.id + '/processing-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
+                                        </a>
+                                        <a v-if="request.status_value === 'for-payment' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                                            <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
+                                        </a>
+                                        <a v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
+                                        </a>
+                                        <a v-if="request.status_value === 'completed' && request.service_value === 'lab-services'" :href="'/admin/requests/' + request.id + '/lab-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
                                         </a>
                                     </div>
                                 </td>
@@ -231,14 +279,7 @@ export default defineComponent({
                         </tbody>
                     </table>
                 </div>
-                <footer class="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
-                    <p>Showing {{ requests.from ?? 0 }}–{{ requests.to ?? 0 }} of {{ requests.total }} entries</p>
-                    <nav class="flex gap-2" aria-label="Pagination">
-                        <button v-for="link in requests.links" :key="link.label" type="button" :disabled="!link.url || link.active" class="rounded-lg border px-3 py-2" :class="link.active ? 'border-[#00aeef] bg-sky-50 font-bold text-[#07559e]' : 'border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40'" @click="page(link.url)">
-                            <span v-html="link.label"></span>
-                        </button>
-                    </nav>
-                </footer>
+                <AdminPagination :pagination="requests" @page="page" />
             </section>
             <RequestDetailsModal :open="Boolean(selectedRequest)" :request="selectedRequest" @close="selectedRequest = null" />
             <ConfirmActionModal

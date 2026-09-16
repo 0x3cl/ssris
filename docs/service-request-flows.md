@@ -32,3 +32,7 @@ The email lookup runs before the client-details step. If an active client with t
 All request validation is performed by Laravel Form Requests. The frontend sends validation requests before advancing from booking and client-detail steps, then displays errors beside the applicable fields and scrolls to the first error. The email is read-only after lookup and is validated again at final submission.
 
 The reusable `FeedbackModal` component shows the completion message after a successful request. It accepts configurable copy, icon, tone, and action properties for future flows.
+
+## Follow-up feedback
+
+R&D requests that have reached the feedback stage can issue a time-limited public feedback link. The public feedback form is served from `/feedback/{token}` and stores the submitted response against that link. The feedback link is generated and managed from the admin request workflow, not from the public request forms.

@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { computed, defineComponent, reactive, ref } from 'vue';
 import AdminShell from '../../components/AdminShell';
+import ConfirmActionModal from '../../components/ConfirmActionModal';
 
 const blankItem = () => ({ item: '', specification: '', quantity: 1, unit_fee: 0 });
 
@@ -17,10 +18,11 @@ const peso = (amount) => currencyFormatter.format(Number(amount) || 0);
 
 export default defineComponent({
     name: 'AdminRddRequestForm',
-    components: { AdminShell, Head },
+    components: { AdminShell, ConfirmActionModal, Head },
     props: { serviceRequest: { type: Object, required: true } },
     setup(props) {
         const currentStep = ref(1);
+        const showConfirm = ref(false);
         const form = reactive({
             reference_prefix: '',
             due_date: '',
@@ -100,6 +102,10 @@ export default defineComponent({
             currentStep.value = 1;
         };
 
+        const confirmSubmit = () => {
+            showConfirm.value = true;
+        };
+
         const submit = () => {
             processing.value = true;
             router.post(`/admin/requests/${props.serviceRequest.id}/rdd-request`, {
@@ -111,6 +117,7 @@ export default defineComponent({
                 onError: (submitErrors) => {
                     errors.value = submitErrors;
                     currentStep.value = 1;
+                    showConfirm.value = false;
                 },
                 onFinish: () => {
                     processing.value = false;
@@ -121,6 +128,7 @@ export default defineComponent({
         return {
             addItem,
             clientInitials,
+            confirmSubmit,
             currentStep,
             discountAmount,
             discountOptions,
@@ -134,6 +142,7 @@ export default defineComponent({
             referencePrefixes,
             removeItem,
             rowTotal,
+            showConfirm,
             subTotal,
             submit,
             totalFee,
@@ -318,7 +327,7 @@ export default defineComponent({
                             <dl class="mt-4 grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Reference number</dt>
-                                    <dd class="mt-1 font-semibold text-slate-900">{{ form.reference_prefix }}-{{ clientInitials }}-##### <span class="font-normal text-slate-500">(assigned on submit)</span></dd>
+                                    <dd class="mt-1 font-semibold text-slate-900">{{ form.reference_prefix }}-{{ clientInitials }}-##### <span class="font-normal text-slate-500"></span></dd>
                                 </div>
                                 <div>
                                     <dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Due date</dt>
@@ -359,13 +368,23 @@ export default defineComponent({
                         <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50" :disabled="processing" @click="goBack">
                             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Go back
                         </button>
-                        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc] disabled:cursor-not-allowed disabled:bg-slate-400" :disabled="processing" @click="submit">
+                        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc] disabled:cursor-not-allowed disabled:bg-slate-400" :disabled="processing" @click="confirmSubmit">
                             {{ processing ? 'Saving…' : 'Submit' }}
                         </button>
                     </div>
                 </template>
             </section>
 
+            <ConfirmActionModal
+                :open="showConfirm"
+                :processing="processing"
+                title="Submit this R&D request form?"
+                message="This will save the request items and move the service request to for payment. Are you sure you want to submit?"
+                confirm-label="Submit"
+                icon="fa-solid fa-paper-plane"
+                @close="showConfirm = false"
+                @confirm="submit"
+            />
         </AdminShell>
     `,
 });

@@ -12,6 +12,7 @@ use App\Models\Client;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ClientService
 {
@@ -44,6 +45,36 @@ class ClientService
         $client->forceFill($this->validate($data, $client));
 
         $client->save();
+
+        return $client;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateReturningClient(Client $client, array $data): Client
+    {
+        $client->forceFill($this->validate($data, $client));
+        $client->is_deleted = false;
+        if ($client->trashed()) {
+            $client->restore();
+        } else {
+            $client->save();
+        }
+
+        return $client;
+    }
+
+    public function restore(int $id): Client
+    {
+        $client = Client::withTrashed()->findOrFail($id);
+
+        if (Client::query()->where('email', $client->email)->exists()) {
+            throw ValidationException::withMessages([
+                'email' => 'Cannot restore this client because an active client already uses this email address.',
+            ]);
+        }
+
+        $client->is_deleted = false;
+        $client->restore();
 
         return $client;
     }

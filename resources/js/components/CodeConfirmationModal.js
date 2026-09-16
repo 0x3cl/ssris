@@ -48,9 +48,10 @@ export default defineComponent({
                 loading.value = false;
             }
         };
-        const confirm = () => {
+        const confirm = async () => {
             if (code.value !== challenge.value) {
-                error.value = 'The confirmation code does not match.';
+                await loadChallenge();
+                error.value = 'The confirmation code did not match. A new code has been generated — please try again.';
                 return;
             }
             emit('confirm', code.value);

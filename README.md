@@ -1,6 +1,6 @@
 # SRRIS
 
-Service Requests Information System (SRRIS) is a Laravel and Inertia application for submitting PTRI walk-in and appointment service requests.
+Service Requests Information System (SRRIS) is a Laravel and Inertia application for PTRI public service requests and administration.
 
 ## Request flows
 
@@ -11,6 +11,7 @@ Both flows look up clients by email and update an existing client record when on
 
 See [Service Request Flows](docs/service-request-flows.md) for the detailed user journey, validation behavior, and persistence rules.
 See [Project Stack and Structure](docs/project-stack.md) for the technologies and directory map.
+See [Admin Operations](docs/admin-operations.md) for request processing, feedback, PDF generation, and administrator modules.
 
 ## Local development
 
@@ -31,4 +32,7 @@ npm run build
 
 ## Agent guidance
 
-The project skill at [.claude/skills/service-request-flows/SKILL.md](.claude/skills/service-request-flows/SKILL.md) describes the shared rules for changing public request flows.
+Project skills provide focused guidance for coding agents:
+
+- [Public request flows](.claude/skills/service-request-flows/SKILL.md)
+- [Admin service operations](.claude/skills/admin-service-operations/SKILL.md)

@@ -17,6 +17,8 @@ This project uses Laravel controllers and Form Requests, Inertia page props, Vue
 - Use Form Requests for final validation. The frontend may request server validation before a step advances, but must not rely on browser `required` validation.
 - Show validation errors beside their fields and scroll only to the first invalid field.
 - Use `FeedbackModal` for completion, warning, error, or informational dialogs instead of creating one-off feedback modals.
+- Keep public feedback separate from request submission. Feedback links are issued after the request lifecycle reaches its feedback stage and are served through `/feedback/{token}`.
+- The public feedback form (`resources/js/pages/feedback-form.js`) confirms with `ConfirmActionModal` before posting the response, since submissions cannot be edited afterward — keep that confirmation step when touching this page.
 
 ## Persistence
 

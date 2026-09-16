@@ -24,34 +24,56 @@ class FormTemplateTest extends TestCase
 
         $feedbackReminder = FormTemplate::query()->where('key', FormTemplateKey::FeedbackReminder)->firstOrFail();
         $this->assertSame('Feedback Follow-up', $feedbackReminder->name);
+        $this->assertSame('SRIS: Feedback Form Reminder', $feedbackReminder->subject);
         $this->assertStringContainsString('ready for pick-up', $feedbackReminder->body);
-        $this->assertStringContainsString('{{name}}', $feedbackReminder->body);
-        $this->assertStringContainsString('{{reference_no}}', $feedbackReminder->body);
-        $this->assertStringContainsString('{{due}}', $feedbackReminder->body);
+        $this->assertStringContainsString('{{reference}}', $feedbackReminder->body);
+        $this->assertStringContainsString('{{due_date}}', $feedbackReminder->body);
         $this->assertStringContainsString('{{link}}', $feedbackReminder->body);
+        $this->assertContains('link', $feedbackReminder->variables);
         $this->assertStringContainsString('Receiving Officer', $feedbackReminder->body);
+        // The feedback link is generated when the reminder is sent, not a static placeholder,
+        // and sits on its own line below the "form link:" label.
+        $this->assertStringContainsString('<p>Customer Satisfaction Feedback form link:</p><p>{{link}}</p>', $feedbackReminder->body);
         $this->assertStringNotContainsString('PTRI RDD Receiving Officer', $feedbackReminder->body);
         // A blank line separates the greeting from the body...
-        $this->assertStringContainsString('<p>Good Day {{name}}!</p><p><br></p><p>Please be advised', $feedbackReminder->body);
+        $this->assertStringContainsString('<p>Good Day!</p><p><br></p><p>Please be advised', $feedbackReminder->body);
+        // The reference-number sentence keeps its own line break, matching the source copy.
+        $this->assertStringContainsString('<p>Please be advised that your service request with Reference Number: {{reference}}</p><p>due on {{due_date}} is ready for pick-up.</p>', $feedbackReminder->body);
         // ...and the body from the sign-off, whose two lines sit adjacent with no gap.
         $this->assertStringContainsString('Thank you so much.</p><p><br></p><p>Sincerely yours,</p><p>Receiving Officer</p>', $feedbackReminder->body);
-        // Body lines themselves are packed tightly, with no blank line between them.
-        $this->assertStringContainsString('{{link}}</p><p>Thank you so much.</p>', $feedbackReminder->body);
+        // The feedback link sits in its own paragraph block, set off by blank lines.
+        $this->assertStringContainsString('{{link}}</p><p><br></p><p>Thank you so much.</p>', $feedbackReminder->body);
 
         $reschedule = FormTemplate::query()->where('key', FormTemplateKey::AppointmentReschedule)->firstOrFail();
         $this->assertSame('Appointment Rescheduling', $reschedule->name);
-        $this->assertStringContainsString('{{old_schedule}}', $reschedule->body);
-        $this->assertStringContainsString('{{new_schedule}}', $reschedule->body);
+        $this->assertSame('SRIS: Re-scheduled Appointment', $reschedule->subject);
+        foreach (['previous_date', 'previous_time', 'new_date', 'new_time', 'service', 'client_email', 'client_name', 'mobile_number', 'reason'] as $variable) {
+            $this->assertContains($variable, $reschedule->variables);
+            $this->assertStringContainsString("{{{$variable}}}", $reschedule->body);
+        }
 
         $confirmed = FormTemplate::query()->where('key', FormTemplateKey::AppointmentConfirmed)->firstOrFail();
         $this->assertSame('Appointment Confirmation', $confirmed->name);
+        $this->assertSame('SRIS: Confirmed Appointment', $confirmed->subject);
+        foreach (['appointment_id', 'confirmed_date', 'confirmed_time', 'service', 'client_email', 'client_name', 'mobile_number'] as $variable) {
+            $this->assertContains($variable, $confirmed->variables);
+            $this->assertStringContainsString("{{{$variable}}}", $confirmed->body);
+        }
+
+        $cancellation = FormTemplate::query()->where('key', FormTemplateKey::AppointmentCancellation)->firstOrFail();
+        $this->assertSame('Appointment Cancellation', $cancellation->name);
+        $this->assertSame('SRIS: Appointment Cancelled', $cancellation->subject);
+        foreach (['appointment_id', 'service', 'appointment_date', 'appointment_time', 'client_email', 'client_name', 'administrator', 'reason'] as $variable) {
+            $this->assertContains($variable, $cancellation->variables);
+            $this->assertStringContainsString("{{{$variable}}}", $cancellation->body);
+        }
 
         $receipt = FormTemplate::query()->where('key', FormTemplateKey::ServiceRequestReceipt)->firstOrFail();
         $this->assertSame('Service Request Confirmation', $receipt->name);
         $this->assertSame('SRIS: Service Request', $receipt->subject);
         $this->assertStringContainsString('<ul>', $receipt->body);
         $this->assertStringContainsString('<li>Email: {{client_email}}</li>', $receipt->body);
-        foreach (['name', 'client_email', 'client_name', 'mobile_number', 'participant_count', 'group_count', 'technology_assistance', 'request_message'] as $variable) {
+        foreach (['service', 'client_email', 'client_name', 'mobile_number'] as $variable) {
             $this->assertContains($variable, $receipt->variables);
             $this->assertStringContainsString("{{{$variable}}}", $receipt->body);
         }

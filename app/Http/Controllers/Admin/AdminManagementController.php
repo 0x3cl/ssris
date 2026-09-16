@@ -3,26 +3,34 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\ClientService;
+use App\Enums\FormTemplateKey;
 use App\Enums\ServiceRequestStatus;
 use App\Http\Controllers\Controller;
+use App\Mail\FormTemplateMail;
+use App\Models\FormTemplate;
 use App\Models\ServiceRequest;
 use App\Models\SmtpSetting;
+use App\Models\UlimsSetting;
 use App\Models\User;
+use App\Services\SmtpMailerConfigurator;
+use App\Services\UlimsClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Throwable;
 
 class AdminManagementController extends Controller
 {
-    private const MODULES = ['dashboard', 'requests', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'smtp-configuration'];
+    private const MODULES = ['dashboard', 'clients', 'requests', 'reports', 'users', 'roles-and-permissions', 'form-templates', 'feedback-builder', 'smtp-configuration', 'ulims-configuration'];
 
     public function dashboard(Request $request): Response
     {
@@ -137,9 +145,12 @@ class AdminManagementController extends Controller
     {
         $entries = $this->entries($request);
         $search = trim($request->string('search')->value());
+        $role = trim($request->string('role')->value());
+        $status = trim($request->string('status')->value());
 
         return Inertia::render('admin/users', [
-            'filters' => compact('entries', 'search'),
+            'filters' => compact('entries', 'role', 'search', 'status'),
+            'roles' => Role::query()->orderBy('name')->get(['id', 'name']),
             'users' => User::query()
                 ->with('roles:id,name')
                 ->when($search !== '', function ($query) use ($search): void {
@@ -149,6 +160,8 @@ class AdminManagementController extends Controller
                             ->orWhere('email', 'like', "%{$search}%");
                     });
                 })
+                ->when($role !== '', fn ($query) => $query->whereHas('roles', fn ($roleQuery) => $roleQuery->where('name', $role)))
+                ->when(in_array($status, ['active', 'inactive'], true), fn ($query) => $query->where('account_status', $status))
                 ->latest()
                 ->paginate($entries)
                 ->withQueryString(),
@@ -198,7 +211,14 @@ class AdminManagementController extends Controller
 
     public function saveSmtp(Request $request): RedirectResponse
     {
-        $data = $request->validate(['host' => ['required', 'string'], 'port' => ['required', 'string'], 'username' => ['required', 'string'], 'password' => ['nullable', 'string']]);
+        $data = $request->validate([
+            'host' => ['required', 'string'],
+            'port' => ['required', 'string'],
+            'username' => ['required', 'string'],
+            'password' => ['nullable', 'string'],
+            'from_address' => ['required', 'email'],
+            'from_name' => ['required', 'string'],
+        ]);
         $setting = SmtpSetting::query()->first() ?? new SmtpSetting;
         if ($data['password'] === null || $data['password'] === '') {
             unset($data['password']);
@@ -206,6 +226,62 @@ class AdminManagementController extends Controller
         $setting->fill($data)->save();
 
         return back()->with('success', 'SMTP configuration updated.');
+    }
+
+    public function testSmtp(Request $request): RedirectResponse
+    {
+        $setting = SmtpSetting::query()->first();
+
+        if ($setting === null) {
+            return back()->with('error', 'Save SMTP settings before testing the connection.');
+        }
+
+        $template = FormTemplate::query()->where('key', FormTemplateKey::TestNotification)->first();
+
+        if ($template === null) {
+            return back()->with('error', 'The "Test Notification" email template is not configured.');
+        }
+
+        $recipient = $request->user()->email;
+        $rendered = $template->render([
+            'name' => $request->user()->name,
+            'sent_at' => now()->format('F j, Y g:i A'),
+        ]);
+
+        try {
+            app(SmtpMailerConfigurator::class)->configure($setting);
+            Mail::mailer('smtp')->to($recipient)->send(new FormTemplateMail($rendered['subject'], $rendered['body']));
+        } catch (Throwable $exception) {
+            return back()->with('error', "SMTP connection test failed: {$exception->getMessage()}");
+        }
+
+        return back()->with('success', "Test email sent to {$recipient}. Check your inbox to confirm the SMTP connection is working.");
+    }
+
+    public function ulimsSettings(): Response
+    {
+        return Inertia::render('admin/ulims-settings', ['setting' => UlimsSetting::query()->first()]);
+    }
+
+    public function saveUlimsSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'base_url' => ['required', 'url'],
+            'username' => ['required', 'string'],
+        ]);
+        $data['base_url'] = rtrim($data['base_url'], '/');
+
+        $setting = UlimsSetting::query()->first() ?? new UlimsSetting;
+        $setting->fill($data)->save();
+
+        return back()->with('success', 'ULIMS configuration updated.');
+    }
+
+    public function testUlimsConnection(UlimsClient $ulims): RedirectResponse
+    {
+        $result = $ulims->testConnection();
+
+        return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
     }
 
     public function account(Request $request): Response

@@ -3,7 +3,7 @@ import { defineComponent } from 'vue';
 export default defineComponent({
     name: 'AppNavbar',
     template: `
-        <header class="relative z-20 border-t-7 border-slate-800 bg-linear-to-r from-[#0d5ba6] via-[#07559e] to-[#043d78] py-4 text-white shadow-lg">
+        <header class="relative z-20 border-t-7 border-slate-800 bg-linear-to-r from-[#0d5ba6] via-[#07559e] to-[#043d78] py-4 text-white shadow-lg print:hidden">
             <nav class="mx-auto flex min-h-20 max-w-[1800px] flex-col items-center justify-between gap-5 px-5 py-3 sm:px-8 md:flex-row lg:px-12" aria-label="PTRI header">
                 <a href="/" class="flex min-w-0 items-center gap-3" aria-label="PTRI home">
                     <img src="https://hrms.dost-ptri.com/images/ptrionlywhite.png" alt="DOST-PTRI" class="h-14 w-14 shrink-0 object-contain" />

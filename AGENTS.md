@@ -175,3 +175,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Walk-in and appointment requests share email-based client lookup and update-or-create behavior. Use enums for service and client option lists.
 - A walk-in creates a `service_requests` record with `is_appointment = false`. An appointment sets `is_appointment = true` and persists `appointment_date` and `appointment_time`.
 - Read `docs/service-request-flows.md` and `.claude/skills/service-request-flows/SKILL.md` before making request-flow changes.
+
+### Admin and R&D request workflow
+
+- `Admin\RddRequestController` drives the R&D lifecycle: create the request form (`pending` → `for_payment`), verify OP/OR payment with optional proof attachments (`for_payment` → `awaiting_feedback`), then send/generate feedback links (`awaiting_feedback` → `completed`). A completed request stays reachable read-only through a "More Info" action on the same feedback page.
+- Tabbed admin pages persist the active tab in a `?tab=` query parameter (`resources/js/utils/query-tab.js`, `useQueryTab`); redirects after each stage's save append the next tab so the admin lands there automatically.
+- Reminder emails render seeded `FormTemplate` rows through `FormTemplateMailer`. Any link placeholder in a template body must be a real `FeedbackLinkService`-generated URL, never a hardcoded or external one.
+- A final, irreversible submit (R&D form submit, payment verification, public feedback submit) confirms first via `ConfirmActionModal` or `CodeConfirmationModal`.
+- Read `docs/admin-operations.md` and `.claude/skills/admin-service-operations/SKILL.md` before making admin or R&D workflow changes.

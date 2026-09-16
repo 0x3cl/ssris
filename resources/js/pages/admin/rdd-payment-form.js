@@ -1,24 +1,30 @@
 import { Head, router } from '@inertiajs/vue3';
 import { computed, defineComponent, reactive, ref } from 'vue';
 import AdminShell from '../../components/AdminShell';
+import ConfirmActionModal from '../../components/ConfirmActionModal';
 import CodeConfirmationModal from '../../components/CodeConfirmationModal';
+import { useQueryTab } from '../../utils/query-tab';
 
 const currencyFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 const peso = (amount) => currencyFormatter.format(Number(amount) || 0);
 
 export default defineComponent({
     name: 'AdminRddPaymentForm',
-    components: { AdminShell, CodeConfirmationModal, Head },
+    components: { AdminShell, ConfirmActionModal, CodeConfirmationModal, Head },
     props: { serviceRequest: { type: Object, required: true }, rddRequest: { type: Object, required: true } },
     setup(props) {
-        const activeTab = ref('service-request');
+        const activeTab = useQueryTab(['service-request', 'payment-verification'], 'service-request');
         const form = reactive({
             op_no: props.rddRequest.op_no || '',
             or_no: props.rddRequest.or_no || '',
+            op_attachment: null,
+            or_attachment: null,
         });
         const errors = ref({});
         const processing = ref(false);
         const showConfirm = ref(false);
+        const sendingReminder = ref(false);
+        const showReminderConfirm = ref(false);
 
         const rowTotal = (item) => (Number(item.quantity) || 0) * (Number(item.unit_fee) || 0);
 
@@ -46,6 +52,8 @@ export default defineComponent({
             router.post(`/admin/requests/${props.serviceRequest.id}/rdd-request/payment`, {
                 op_no: form.op_no,
                 or_no: form.or_no,
+                op_attachment: form.op_attachment,
+                or_attachment: form.or_attachment,
                 confirmation_code: code,
             }, {
                 onError: (submitErrors) => {
@@ -59,14 +67,29 @@ export default defineComponent({
             });
         };
 
+        const sendReminder = () => {
+            if (!showReminderConfirm.value || sendingReminder.value) return;
+            showReminderConfirm.value = false;
+            sendingReminder.value = true;
+            router.post(`/admin/requests/${props.serviceRequest.id}/rdd-request/payment/remind`, {}, {
+                preserveScroll: true,
+                onFinish: () => {
+                    sendingReminder.value = false;
+                },
+            });
+        };
+
         return {
             activeTab,
+            showReminderConfirm,
             errors,
             form,
             openConfirm,
             peso,
             processing,
             rowTotal,
+            sendingReminder,
+            sendReminder,
             showConfirm,
             submit,
         };
@@ -165,20 +188,39 @@ export default defineComponent({
                 </template>
 
                 <template v-else>
-                    <div class="mt-7 max-w-xl">
-                        <h3 class="text-base font-bold text-slate-900">Payment verification</h3>
-                        <p class="mt-1 text-sm text-slate-500">Record the official payment references for {{ rddRequest.reference_no }}.</p>
+                    <div class="mt-7">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Payment verification</h3>
+                                <p class="mt-1 text-sm text-slate-500">Record the official payment references for {{ rddRequest.reference_no }}.</p>
+                            </div>
+                            <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60" :disabled="sendingReminder" @click="showReminderConfirm = true">
+                                <i class="fa-solid fa-envelope" aria-hidden="true"></i>{{ sendingReminder ? 'Sending…' : 'Send reminder' }}
+                            </button>
+                        </div>
 
-                        <div class="mt-5 space-y-5">
-                            <label class="block">
+                        <div class="mt-5 grid grid-cols-1 items-start gap-5 md:grid-cols-2">
+                            <label class="block min-w-0">
                                 <span class="text-sm font-medium text-slate-700">OP number</span>
-                                <input v-model="form.op_no" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                <input v-model="form.op_no" class="mt-2 h-12 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
                                 <p v-if="errors.op_no" class="mt-1 text-sm text-rose-600">{{ errors.op_no }}</p>
                             </label>
-                            <label class="block">
+                            <label class="block min-w-0">
+                                <span class="text-sm font-medium text-slate-700">OP attachment (optional)</span>
+                                <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="mt-2 block h-12 w-full min-w-0 rounded-xl border border-slate-300 p-3 text-sm" @change="form.op_attachment = $event.target.files[0] || null" />
+                                <span class="mt-1 block text-xs text-slate-500">PDF, JPG, or PNG. Maximum 5 MB.</span>
+                                <p v-if="errors.op_attachment" class="mt-1 text-sm text-rose-600">{{ errors.op_attachment }}</p>
+                            </label>
+                            <label class="block min-w-0">
                                 <span class="text-sm font-medium text-slate-700">OR number</span>
-                                <input v-model="form.or_no" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                <input v-model="form.or_no" class="mt-2 h-12 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
                                 <p v-if="errors.or_no" class="mt-1 text-sm text-rose-600">{{ errors.or_no }}</p>
+                            </label>
+                            <label class="block min-w-0">
+                                <span class="text-sm font-medium text-slate-700">OR attachment (optional)</span>
+                                <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="mt-2 block h-12 w-full min-w-0 rounded-xl border border-slate-300 p-3 text-sm" @change="form.or_attachment = $event.target.files[0] || null" />
+                                <span class="mt-1 block text-xs text-slate-500">PDF, JPG, or PNG. Maximum 5 MB.</span>
+                                <p v-if="errors.or_attachment" class="mt-1 text-sm text-rose-600">{{ errors.or_attachment }}</p>
                             </label>
                         </div>
                     </div>
@@ -203,6 +245,16 @@ export default defineComponent({
                 icon="fa-solid fa-money-check-dollar"
                 @close="showConfirm = false"
                 @confirm="submit"
+            />
+            <ConfirmActionModal
+                :open="showReminderConfirm"
+                title="Send payment reminder?"
+                :message="'Continuing will send a payment reminder email to ' + serviceRequest.client.email + '. Would you like to proceed?'"
+                icon="fa-solid fa-envelope"
+                confirm-label="Send reminder"
+                :processing="sendingReminder"
+                @close="showReminderConfirm = false"
+                @confirm="sendReminder"
             />
         </AdminShell>
     `,

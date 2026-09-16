@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tsd_requests', function (Blueprint $table) {
+        Schema::create('processing_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('service_request_id')
                 ->constrained()
@@ -25,9 +25,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('tsd_request_items', function (Blueprint $table) {
+        Schema::create('processing_request_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tsd_request_id')
+            $table->foreignId('processing_request_id')
                 ->constrained()
                 ->cascadeOnDelete();
             $table->string('item');
@@ -44,7 +44,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tsd_request_items');
-        Schema::dropIfExists('tsd_requests');
+        Schema::dropIfExists('processing_request_items');
+        Schema::dropIfExists('processing_requests');
     }
 };

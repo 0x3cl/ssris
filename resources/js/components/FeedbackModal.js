@@ -32,7 +32,7 @@ export default defineComponent({
                 <section class="w-full max-w-xl rounded-3xl bg-white p-8 text-center shadow-2xl sm:p-10">
                     <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full text-3xl" :class="toneClass" aria-hidden="true"><i :class="icon"></i></div>
                     <h2 id="feedback-modal-title" class="mt-6 text-2xl font-bold text-slate-900 sm:text-3xl">{{ title }}</h2>
-                    <p class="mt-3 text-base leading-7 text-slate-600">{{ message }}</p>
+                    <p class="mt-3 whitespace-pre-line break-words text-base leading-7 text-slate-600">{{ message }}</p>
                     <a v-if="actionHref && actionLabel" :href="actionHref" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc]"><i :class="actionIcon" aria-hidden="true"></i>{{ actionLabel }}</a>
                     <button v-else type="button" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc]" @click="$emit('close')">{{ closeLabel }}</button>
                 </section>

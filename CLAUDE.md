@@ -204,6 +204,10 @@ Everything under `Route::prefix('admin')` (see `routes/web.php`) except login re
 
 Every file in `resources/js/pages` and `resources/js/components` is `defineComponent({ template: \`...\` })` in a `.js` file — there are no `.vue` files in this project. `vite.config.js` aliases `vue` to the runtime+compiler build specifically to support compiling these inline template strings; don't "fix" that alias or introduce `.vue` SFCs without checking with the user first, since the whole codebase depends on the current setup. Inertia page resolution in `resources/js/app.js` globs `./pages/**/*.js` accordingly.
 
+### R&D admin workflow
+
+`Admin\RddRequestController` drives the R&D service-request lifecycle end to end: create the request form (`pending` → `for_payment`), verify OP/OR payment details with optional proof attachments (`for_payment` → `awaiting_feedback`), then send/generate feedback links (`awaiting_feedback` → `completed`). Each stage's redirect and the requests-list action links append a `?tab=` query parameter so the admin lands on the next relevant tab (see `useQueryTab` in `resources/js/utils/query-tab.js`); a completed request stays reachable read-only through a "More Info" action on the same feedback page. Payment and feedback reminder emails render seeded `FormTemplate` rows through `FormTemplateMailer`, and any link included in a template body must be a real `FeedbackLinkService`-generated URL, not a hardcoded placeholder. See `docs/admin-operations.md` and the `admin-service-operations` skill before changing this flow.
+
 ### Migrated-but-unused modules
 
-Migrations exist for `rdd_requests`, `tsd_requests`, `lab_requests`, `tour_requests`, and activity/visitor logging, but there are no corresponding models/controllers yet — treat these as scaffolding for future modules, not dead code to remove.
+Migrations exist for `tsd_requests`, `lab_requests`, `tour_requests`, and activity/visitor logging, but there are no corresponding models/controllers yet — treat these as scaffolding for future modules, not dead code to remove. (`rdd_requests` is now fully implemented — see the R&D admin workflow above.)
