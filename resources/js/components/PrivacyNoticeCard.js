@@ -2,7 +2,10 @@ import { defineComponent, onMounted, ref } from 'vue';
 
 export default defineComponent({
     name: 'PrivacyNoticeCard',
-    props: { position: { type: String, default: 'right' } },
+    props: {
+        position: { type: String, default: 'right' },
+        offsetClass: { type: String, default: '' },
+    },
     setup() {
         const visible = ref(false);
         const expanded = ref(false);
@@ -17,7 +20,7 @@ export default defineComponent({
     },
     template: `
         <div>
-            <div class="fixed bottom-8 z-30 w-56 transition-all duration-700 ease-out sm:w-64" :class="[position === 'left' ? 'left-8' : 'right-8', visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-10 opacity-0']">
+            <div class="fixed bottom-8 z-30 w-56 transition-all duration-700 ease-out sm:w-64" :class="[offsetClass || (position === 'left' ? 'left-8' : 'right-8'), visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-10 opacity-0']">
                 <div class="relative overflow-visible rounded-xl border border-slate-200 bg-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
                     <button type="button" class="absolute -right-3 -top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-xl leading-none text-slate-500 shadow-md ring-1 ring-slate-200 hover:bg-slate-100 hover:text-slate-800" aria-label="Dismiss privacy notice" @click="visible = false">×</button>
                     <button type="button" class="flex w-full flex-col overflow-hidden rounded-xl text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-200" @click="expanded = true">

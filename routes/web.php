@@ -4,6 +4,7 @@ use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\AdminModuleController;
+use App\Http\Controllers\Admin\AdminPasswordResetController;
 use App\Http\Controllers\Admin\AuditTrailController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\FeedbackDimensionController;
@@ -50,6 +51,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('login', [AdminAuthController::class, 'create'])->name('login');
     Route::post('login', [AdminAuthController::class, 'store'])->middleware('guest')->name('login.store');
     Route::post('logout', [AdminAuthController::class, 'destroy'])->middleware('auth')->name('logout');
+    Route::get('forgot-password', [AdminPasswordResetController::class, 'create'])->middleware('guest')->name('password.request');
+    Route::post('forgot-password', [AdminPasswordResetController::class, 'store'])->middleware('guest')->name('password.email');
+    Route::get('reset-password/{token}', [AdminPasswordResetController::class, 'edit'])->middleware('guest')->name('password.reset');
+    Route::post('reset-password', [AdminPasswordResetController::class, 'update'])->middleware('guest')->name('password.update');
 
     Route::middleware(['auth', 'role:superadmin'])->group(function () {
         Route::get('/', fn () => to_route('dashboard'))->name('dashboard');

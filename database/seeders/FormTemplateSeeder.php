@@ -174,6 +174,24 @@ class FormTemplateSeeder extends Seeder
                     'Thank you so much.',
                 ]),
             ],
+            [
+                'key' => FormTemplateKey::PasswordReset,
+                'subject' => 'SRIS: Reset Your Password',
+                'variables' => ['name', 'reset_url', 'expires'],
+                'body' => $this->blocks([
+                    $this->lines(['Good Day {{name}}!']),
+                    $this->lines([
+                        'We received a request to reset the password for your SRIS administrator account.',
+                        'Click the link below to choose a new password:',
+                    ]),
+                    $this->lines(['{{reset_url}}']),
+                    $this->lines([
+                        'This link will expire in {{expires}}. If you did not request a password reset, no further action is required and your password will remain unchanged.',
+                    ]),
+                    $this->lines(['Thank you so much.']),
+                    $this->lines(['Sincerely yours,', 'Receiving Officer']),
+                ]),
+            ],
         ];
     }
 

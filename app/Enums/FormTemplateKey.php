@@ -11,6 +11,7 @@ enum FormTemplateKey: string
     case AppointmentReschedule = 'appointment-reschedule';
     case ServiceRequestReceipt = 'service-request-receipt';
     case TestNotification = 'test-notification';
+    case PasswordReset = 'password-reset';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum FormTemplateKey: string
             self::AppointmentReschedule => 'Appointment Rescheduling',
             self::ServiceRequestReceipt => 'Service Request Confirmation',
             self::TestNotification => 'Test Notification',
+            self::PasswordReset => 'Password Reset',
         };
     }
 
@@ -35,6 +37,7 @@ enum FormTemplateKey: string
             self::AppointmentReschedule => 'Sent when a booked appointment is moved by the receiving officer to a new schedule.',
             self::ServiceRequestReceipt => 'Sent to acknowledge receipt of a new Plant Tour service request, summarizing the details received.',
             self::TestNotification => 'A generic sample notice used to confirm the SMTP configuration is delivering emails correctly.',
+            self::PasswordReset => 'Sent to an administrator who requested a password reset link for their account.',
         };
     }
 }
