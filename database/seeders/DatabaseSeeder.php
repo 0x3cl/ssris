@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             FormTemplateSeeder::class,
+            TourNotificationTemplateSeeder::class,
             SmtpSettingSeeder::class,
             FeedbackFormSeeder::class,
         ]);

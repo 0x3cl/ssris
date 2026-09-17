@@ -50,6 +50,14 @@ const blankClient = (service = '') => ({
     source: '',
     service,
     description: '',
+    message: '',
+    no_persons: '',
+    no_groups: '',
+    technology_assistance: '',
+    visit_objectives: '',
+    testing_lab: [],
+    pilot_plant: [],
+    others: [],
     terms_accepted: false,
 });
 
@@ -120,6 +128,18 @@ export default defineComponent({
             type: Array,
             required: true,
         },
+        testingLabFacilities: {
+            type: Array,
+            required: true,
+        },
+        pilotPlantFacilities: {
+            type: Array,
+            required: true,
+        },
+        otherTourFacilities: {
+            type: Array,
+            required: true,
+        },
     },
     setup(props) {
         const page = usePage();
@@ -158,6 +178,16 @@ export default defineComponent({
         const isAcademe = computed(() => form.type_client === 'academe');
         const isBusiness = computed(() => ['government', 'private-companies'].includes(form.type_client));
         const isPrivateCompany = computed(() => form.type_client === 'private-companies');
+        const isTourService = computed(() => form.service === 'plant-tour-services');
+        const stepLabels = computed(() => [
+            'Booking details',
+            'Choose service',
+            'Client details',
+            ...(isTourService.value ? ['Visit request'] : []),
+            'Review',
+        ]);
+        const reviewStep = computed(() => stepLabels.value.length);
+        const visitRequestStep = 4;
         const selectedClientTypeLabel = computed(() => props.clientTypes.find((type) => type.value === form.type_client)?.label ?? 'Choose client type');
         const selectedSourceLabel = computed(() => props.sources.find((source) => source.value === form.source)?.label ?? 'Choose source');
         const selectedServiceLabel = computed(() => props.services.find((service) => service.value === form.service)?.label ?? form.service);
@@ -350,23 +380,46 @@ export default defineComponent({
 
         const errorLabels = {
             firstname: 'First name', middlename: 'Middle name', lastname: 'Last name', age: 'Age', gender: 'Gender', email: 'Email', mobile_no: 'Mobile number', tel_no: 'Telephone number', fax_no: 'Fax number', address: 'Address', region: 'Region', province: 'Province', municipality: 'Municipality', type_client: 'Client type', source: 'Source', company: 'Company', school_name: 'School name', business_role: 'Business role', enterprise_size: 'Enterprise size', market: 'Market', products: 'Products', description: 'Request description',
+            message: 'Message to us', no_persons: 'Number of persons', no_groups: 'Number of group(s)/batch(es)', technology_assistance: 'Technology assistance', visit_objectives: 'Objective of this visit',
         };
-        const markClientRequiredFields = () => nextTick(() => markRequiredFields('#client-details', ['First name', 'Last name', 'Age', 'Gender', 'Email', 'Mobile number', 'Telephone number', 'Address', 'Region', 'Province', 'Municipality', 'Client type', 'Source', 'Company', 'School name', 'Business role', 'Enterprise size', 'Market', 'Products', 'Request description']));
+        const errorContainers = '#client-details, #visit-request';
+        const markClientRequiredFields = () => nextTick(() => markRequiredFields('#client-details', ['First name', 'Last name', 'Age', 'Gender', 'Email', 'Mobile number', 'Telephone number', 'Address', 'Region', 'Province', 'Municipality', 'Client type', 'Source', 'Company', 'School name', 'Business role', 'Enterprise size', 'Market', 'Products', ...(isTourService.value ? [] : ['Request description'])]));
+        const markVisitRequestFields = () => nextTick(() => markRequiredFields('#visit-request', ['Message to us', 'Number of persons', 'Number of group(s)/batch(es)', 'Technology assistance', 'Objective of this visit']));
+
+        const toggleFacility = (field, value) => {
+            const index = form[field].indexOf(value);
+
+            if (index === -1) {
+                form[field].push(value);
+            } else {
+                form[field].splice(index, 1);
+            }
+        };
+
+        const facilityLabels = (values, options) => {
+            const labels = options.filter((option) => values.includes(option.value)).map((option) => option.label);
+
+            return labels.length ? labels.join(', ') : '—';
+        };
 
         const fieldForError = (fieldName) => {
             const label = errorLabels[fieldName === 'fullname' ? 'firstname' : fieldName];
 
-            return [...document.querySelectorAll('#client-details label')]
+            if (!label) {
+                return undefined;
+            }
+
+            return [...document.querySelectorAll(`${errorContainers}`.split(', ').map((scope) => `${scope} label`).join(', '))]
                 .find((element) => element.querySelector('span')?.textContent.trim() === label)
                 ?.querySelector('input, textarea, select')
-                ?? [...document.querySelectorAll('#client-details button')]
+                ?? [...document.querySelectorAll(`${errorContainers}`.split(', ').map((scope) => `${scope} button`).join(', '))]
                     .find((element) => element.parentElement?.querySelector(':scope > span')?.textContent.trim() === label);
         };
 
         const displayFieldErrors = (errors) => {
             nextTick(() => {
                 document.querySelectorAll('.field-error').forEach((element) => element.remove());
-                document.querySelectorAll('#client-details [aria-invalid="true"]').forEach((element) => {
+                document.querySelectorAll(`${errorContainers}`.split(', ').map((scope) => `${scope} [aria-invalid="true"]`).join(', ')).forEach((element) => {
                     element.removeAttribute('aria-invalid');
                     element.classList.remove('border-rose-500', 'ring-2', 'ring-rose-100');
                 });
@@ -392,8 +445,20 @@ export default defineComponent({
                 if (field) {
                     field.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     field.focus({ preventScroll: true });
+                } else if (errors.facilities) {
+                    document.querySelector('#facilities-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
+        };
+
+        const tourFieldNames = new Set(['message', 'no_persons', 'no_groups', 'technology_assistance', 'visit_objectives', 'testing_lab', 'pilot_plant', 'others', 'facilities']);
+
+        const routeToStepForErrors = (errors) => {
+            const hasClientError = Object.keys(errors).some((field) => !tourFieldNames.has(field.split('.')[0]));
+
+            if (hasClientError) return 3;
+
+            return isTourService.value ? visitRequestStep : 3;
         };
 
         const validateDetails = async () => {
@@ -413,18 +478,54 @@ export default defineComponent({
                 });
 
                 if (response.ok) {
-                    currentStep.value = 4;
+                    currentStep.value = reviewStep.value;
 
                     return;
                 }
 
                 const data = await response.json();
                 formErrors.value = data.errors ?? { form: ['We could not validate your details.'] };
+                currentStep.value = routeToStepForErrors(formErrors.value);
+
+                if (currentStep.value === 3) {
+                    markClientRequiredFields();
+                } else {
+                    markVisitRequestFields();
+                }
+
                 displayFieldErrors(formErrors.value);
             } catch {
                 formErrors.value = { form: ['We could not validate your details. Please try again.'] };
             } finally {
                 isValidatingDetails.value = false;
+            }
+        };
+
+        const advanceFromClientDetails = () => {
+            if (isTourService.value) {
+                formErrors.value = {};
+                displayFieldErrors({});
+                currentStep.value = visitRequestStep;
+                markVisitRequestFields();
+
+                return;
+            }
+
+            validateDetails();
+        };
+
+        const backToClientDetails = () => {
+            currentStep.value = 3;
+            markClientRequiredFields();
+        };
+
+        const backFromReview = () => {
+            currentStep.value = isTourService.value ? visitRequestStep : 3;
+
+            if (isTourService.value) {
+                markVisitRequestFields();
+            } else {
+                markClientRequiredFields();
             }
         };
 
@@ -479,8 +580,14 @@ export default defineComponent({
                         return;
                     }
 
-                currentStep.value = 3;
-                markClientRequiredFields();
+                    currentStep.value = routeToStepForErrors(errors);
+
+                    if (currentStep.value === 3) {
+                        markClientRequiredFields();
+                    } else {
+                        markVisitRequestFields();
+                    }
+
                     displayFieldErrors(errors);
                 },
                 onFinish: () => {
@@ -544,6 +651,9 @@ export default defineComponent({
             clientTypeIllustrations,
             choiceConfig,
             activeChoice,
+            advanceFromClientDetails,
+            backFromReview,
+            backToClientDetails,
             bookingErrors,
             currentStep,
             email,
@@ -551,10 +661,12 @@ export default defineComponent({
             form,
             formErrors,
             confirmTermsAndSubmit,
+            facilityLabels,
             formatDate,
             formatTime,
             hasSelectedService,
             isAcademe,
+            isTourService,
             minAppointmentDate,
             isBusiness,
             isPrivateCompany,
@@ -578,6 +690,7 @@ export default defineComponent({
             regionCode,
             regionHasNoProvinces,
             regions,
+            reviewStep,
             selectClientType,
             selectedClientTypeLabel,
             selectedBusinessRoleLabel,
@@ -598,10 +711,13 @@ export default defineComponent({
             showSubmissionErrorModal,
             showSubmissionSuccessModal,
             showTermsModal,
+            stepLabels,
             submissionErrorMessage,
             submitWalkIn,
+            toggleFacility,
             validateBooking,
             validateDetails,
+            visitRequestStep,
         };
     },
     template: `
@@ -616,7 +732,7 @@ export default defineComponent({
                     <div><h1 class="font-semibold text-slate-900">Appointment request</h1><p class="text-xs text-[#3d68b1]">Complete the steps below</p></div>
                 </header>
                 <div class="mx-auto mt-10 w-full py-5 sm:py-8">
-                    <AppointmentStepper :current-step="currentStep" />
+                    <AppointmentStepper :current-step="currentStep" :steps="stepLabels" />
                     <section v-if="currentStep === 1" class="mt-6 flex min-h-[320px] flex-col rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
                         <div>
                             <h2 class="text-xl font-semibold text-slate-900">Booking details</h2>
@@ -676,7 +792,7 @@ export default defineComponent({
                             </div>
                             <button type="button" class="text-sm font-semibold text-[#008dcc] hover:text-[#006f9f]" @click="currentStep = 2">Change service</button>
                         </div>
-                        <form v-if="form.email" id="client-details" class="mt-8 border-t border-slate-200 pt-8" @submit.prevent="validateDetails">
+                        <form v-if="form.email" id="client-details" class="mt-8 border-t border-slate-200 pt-8" @submit.prevent="advanceFromClientDetails">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <h2 class="text-xl font-semibold text-slate-900">Client information</h2>
@@ -816,7 +932,7 @@ export default defineComponent({
                                                 <input v-model="form.products" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
                                             </label>
                                         </template>
-                                        <label class="md:col-span-6">
+                                        <label v-if="!isTourService" class="md:col-span-6">
                                             <span class="text-sm font-medium text-slate-700">Request description</span>
                                             <textarea v-model="form.description" rows="4" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"></textarea>
                                         </label>
@@ -833,7 +949,80 @@ export default defineComponent({
                             </div>
                         </form>
                     </section>
-                    <section v-else class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
+                    <section v-else-if="currentStep === visitRequestStep && isTourService" class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
+                        <div>
+                            <h2 class="text-xl font-semibold text-slate-900">Visit request</h2>
+                            <p class="mt-1 text-slate-600">Tell us about your planned plant tour visit. Fields marked with<span class="font-semibold text-rose-600">*</span>are required.</p>
+                        </div>
+                        <form id="visit-request" class="mt-8 space-y-6" @submit.prevent="validateDetails">
+                            <label class="block">
+                                <span class="text-sm font-medium text-slate-700">Message to us</span>
+                                <textarea v-model="form.message" rows="4" placeholder="Please specify about your plan for your visit" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"></textarea>
+                            </label>
+                            <div id="facilities-picker">
+                                <h3 class="text-base font-semibold text-slate-900">Choose facilities you want to visit<span class="font-semibold text-rose-600"> *</span></h3>
+                                <p class="mt-1 text-sm text-slate-500">Select at least one facility.</p>
+                                <div class="mt-3 grid gap-6 rounded-xl p-3 sm:grid-cols-3" :class="formErrors.facilities ? 'ring-2 ring-rose-100' : ''">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-700">Testing laboratories</p>
+                                        <div class="mt-2 space-y-2">
+                                            <label v-for="facility in testingLabFacilities" :key="facility.value" class="flex items-start gap-2 text-sm text-slate-700">
+                                                <input type="checkbox" :checked="form.testing_lab.includes(facility.value)" class="mt-0.5 h-4 w-4 shrink-0 accent-[#00aeef]" @change="toggleFacility('testing_lab', facility.value)" />{{ facility.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-700">TSD pilot plant</p>
+                                        <div class="mt-2 space-y-2">
+                                            <label v-for="facility in pilotPlantFacilities" :key="facility.value" class="flex items-start gap-2 text-sm text-slate-700">
+                                                <input type="checkbox" :checked="form.pilot_plant.includes(facility.value)" class="mt-0.5 h-4 w-4 shrink-0 accent-[#00aeef]" @change="toggleFacility('pilot_plant', facility.value)" />{{ facility.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-700">Others</p>
+                                        <div class="mt-2 space-y-2">
+                                            <label v-for="facility in otherTourFacilities" :key="facility.value" class="flex items-start gap-2 text-sm text-slate-700">
+                                                <input type="checkbox" :checked="form.others.includes(facility.value)" class="mt-0.5 h-4 w-4 shrink-0 accent-[#00aeef]" @change="toggleFacility('others', facility.value)" />{{ facility.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p v-if="formErrors.facilities" class="mt-2 text-sm text-rose-600">{{ formErrors.facilities[0] }}</p>
+                            </div>
+                            <div class="grid gap-5 md:grid-cols-2">
+                                <label>
+                                    <span class="text-sm font-medium text-slate-700">Number of persons</span>
+                                    <input v-model="form.no_persons" type="number" min="1" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                </label>
+                                <label>
+                                    <span class="text-sm font-medium text-slate-700">Number of group(s)/batch(es)</span>
+                                    <input v-model="form.no_groups" type="number" min="1" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block">
+                                    <span class="text-sm font-medium text-slate-700">Technology assistance</span>
+                                    <textarea v-model="form.technology_assistance" rows="3" placeholder="Others: (Please specify)" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"></textarea>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block">
+                                    <span class="text-sm font-medium text-slate-700">Objective of this visit</span>
+                                    <textarea v-model="form.visit_objectives" rows="3" placeholder="Others: (Please specify)" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5"></textarea>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-7">
+                                <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50" @click="backToClientDetails">
+                                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Go back
+                                </button>
+                                <button type="submit" :disabled="isValidatingDetails" class="inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc] disabled:cursor-not-allowed disabled:bg-slate-400">
+                                    {{ isValidatingDetails ? 'Validating…' : 'Next' }}<i v-if="!isValidatingDetails" class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                    <section v-else-if="currentStep === reviewStep" class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
                         <div class="border-b border-slate-200 pb-6">
                             <h2 class="text-xl font-semibold text-slate-900">Review your request</h2>
                             <p class="mt-1 text-slate-600">Check the information below before submitting your appointment request.</p>
@@ -958,14 +1147,51 @@ export default defineComponent({
                                             <input :value="form.products" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" />
                                         </label>
                                     </template>
-                                    <label class="md:col-span-6">
+                                    <label v-if="!isTourService" class="md:col-span-6">
                                         <span class="text-sm font-medium text-slate-700">Request description</span>
                                         <textarea :value="form.description" readonly rows="4" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"></textarea>
                                     </label>
                                 </div>
                             </section>
+                            <section v-if="isTourService" class="border-t border-slate-100 pt-7">
+                                <h3 class="text-base font-semibold text-slate-900">Visit request</h3>
+                                <div class="mt-4 grid gap-5 md:grid-cols-6">
+                                    <label class="md:col-span-6">
+                                        <span class="text-sm font-medium text-slate-700">Message to us</span>
+                                        <textarea :value="form.message" readonly rows="3" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"></textarea>
+                                    </label>
+                                    <label class="md:col-span-2">
+                                        <span class="text-sm font-medium text-slate-700">Testing laboratories</span>
+                                        <input :value="facilityLabels(form.testing_lab, testingLabFacilities)" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" />
+                                    </label>
+                                    <label class="md:col-span-2">
+                                        <span class="text-sm font-medium text-slate-700">TSD pilot plant</span>
+                                        <input :value="facilityLabels(form.pilot_plant, pilotPlantFacilities)" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" />
+                                    </label>
+                                    <label class="md:col-span-2">
+                                        <span class="text-sm font-medium text-slate-700">Others (facilities)</span>
+                                        <input :value="facilityLabels(form.others, otherTourFacilities)" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" />
+                                    </label>
+                                    <label class="md:col-span-3">
+                                        <span class="text-sm font-medium text-slate-700">Number of persons</span>
+                                        <input :value="form.no_persons" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" />
+                                    </label>
+                                    <label class="md:col-span-3">
+                                        <span class="text-sm font-medium text-slate-700">Number of group(s)/batch(es)</span>
+                                        <input :value="form.no_groups" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" />
+                                    </label>
+                                    <label class="md:col-span-3">
+                                        <span class="text-sm font-medium text-slate-700">Technology assistance</span>
+                                        <textarea :value="form.technology_assistance || '—'" readonly rows="3" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"></textarea>
+                                    </label>
+                                    <label class="md:col-span-3">
+                                        <span class="text-sm font-medium text-slate-700">Objective of this visit</span>
+                                        <textarea :value="form.visit_objectives || '—'" readonly rows="3" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"></textarea>
+                                    </label>
+                                </div>
+                            </section>
                             <div class="flex justify-between gap-3 border-t border-slate-100 pt-7">
-                                <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50" @click="currentStep = 3">
+                                <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#07559e] transition hover:border-[#07559e] hover:bg-sky-50" @click="backFromReview">
                                     <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Go back
                                 </button>
                                 <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[#00aeef] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#008dcc]">

@@ -10,6 +10,7 @@ use App\Services\SmtpMailerConfigurator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Queue\Attributes\WithoutRelations;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
@@ -25,7 +26,7 @@ class SendQueuedServiceMail implements ShouldQueue
     public function __construct(
         public Mailable $mailable,
         public string $recipientEmail,
-        public ?ServiceRequest $serviceRequest,
+        #[WithoutRelations] public ?ServiceRequest $serviceRequest,
         public string $successDescription,
         public string $failureDescriptionPrefix,
     ) {}

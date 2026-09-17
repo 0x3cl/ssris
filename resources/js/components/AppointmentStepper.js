@@ -1,14 +1,12 @@
 import { defineComponent } from 'vue';
 
-const steps = ['Booking details', 'Choose service', 'Client details', 'Review'];
+const defaultSteps = ['Booking details', 'Choose service', 'Client details', 'Review'];
 
 export default defineComponent({
     name: 'AppointmentStepper',
     props: {
         currentStep: { type: Number, required: true },
-    },
-    setup() {
-        return { steps };
+        steps: { type: Array, default: () => defaultSteps },
     },
     template: `
         <ol class="flex items-start" aria-label="Appointment request steps">

@@ -1,18 +1,19 @@
 import { defineComponent } from 'vue';
 
+const defaultSteps = ['Choose service', 'Client details', 'Review'];
+
 export default defineComponent({
     name: 'WalkInStepper',
     props: {
-        currentStep: {
-            type: Number,
-            required: true,
-        },
+        currentStep: { type: Number, required: true },
+        steps: { type: Array, default: () => defaultSteps },
     },
     template: `
         <ol class="flex items-start" aria-label="Walk-in request steps">
-            <li class="flex flex-1 items-start uppercase bold"><div class="flex flex-col items-center"><span class="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold" :class="currentStep >= 1 ? 'bg-[#00aeef] text-white shadow-lg shadow-sky-200' : 'bg-slate-100 text-slate-400'">1</span><span class="mt-3 whitespace-nowrap text-sm font-semibold" :class="currentStep >= 1 ? 'text-[#008dcc]' : 'text-slate-400'">Choose service</span></div><span class="mt-5 h-1.5 flex-1 rounded-full" :class="currentStep >= 2 ? 'bg-[#00aeef]' : 'bg-slate-100'"></span></li>
-            <li class="flex flex-1 items-start uppercase bold"><div class="flex flex-col items-center"><span class="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold" :class="currentStep >= 2 ? 'bg-[#00aeef] text-white shadow-lg shadow-sky-200' : 'bg-slate-100 text-slate-400'">2</span><span class="mt-3 whitespace-nowrap text-sm font-semibold" :class="currentStep >= 2 ? 'text-[#008dcc]' : 'text-slate-400'">Client details</span></div><span class="mt-5 h-1.5 flex-1 rounded-full" :class="currentStep === 3 ? 'bg-[#00aeef]' : 'bg-slate-100'"></span></li>
-            <li class="flex flex-col items-center uppercase bold"><span class="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold" :class="currentStep === 3 ? 'bg-[#00aeef] text-white shadow-lg shadow-sky-200' : 'bg-slate-100 text-slate-400'">3</span><span class="mt-3 whitespace-nowrap text-sm font-semibold" :class="currentStep === 3 ? 'text-[#008dcc]' : 'text-slate-400'">Review</span></li>
+            <li v-for="(step, index) in steps" :key="step" class="flex flex-1 items-start last:flex-none">
+                <div class="flex flex-col items-center"><span class="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold" :class="currentStep >= index + 1 ? 'bg-[#00aeef] text-white shadow-lg shadow-sky-200' : 'bg-slate-100 text-slate-400'">{{ index + 1 }}</span><span class="mt-3 whitespace-nowrap text-center text-sm font-semibold uppercase" :class="currentStep >= index + 1 ? 'text-[#008dcc]' : 'text-slate-400'">{{ step }}</span></div>
+                <span v-if="index < steps.length - 1" class="mt-5 h-1.5 flex-1 rounded-full" :class="currentStep >= index + 2 ? 'bg-[#00aeef]' : 'bg-slate-100'"></span>
+            </li>
         </ol>
     `,
 });

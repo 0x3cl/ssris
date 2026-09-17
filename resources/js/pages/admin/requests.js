@@ -59,6 +59,12 @@ export default defineComponent({
                 return;
             }
 
+            if (request.service_value === 'plant-tour-services') {
+                router.get(`/admin/requests/${request.id}/tour-request`);
+
+                return;
+            }
+
             if (request.service_value === 'rnd-services') {
                 router.get(`/admin/requests/${request.id}/rdd-request`);
 
@@ -249,6 +255,15 @@ export default defineComponent({
                                         <button v-if="request.status_value === 'pending'" type="button" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50" @click="proceed(request)">
                                             <i :class="needsAppointmentConfirmation(request) ? 'fa-solid fa-bolt' : 'fa-solid fa-arrow-right'" aria-hidden="true"></i>{{ needsAppointmentConfirmation(request) ? 'Take Action' : 'Proceed' }}
                                         </button>
+                                        <Link v-if="['assign-signatories', 'for-signature', 'cancelled'].includes(request.status_value) && request.service_value === 'plant-tour-services'" :href="'/admin/requests/' + request.id + '/tour-request?tab=' + (request.status_value === 'cancelled' ? 'service-request' : (request.status_value === 'for-signature' ? 'for-signature' : 'signatories'))" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold" :class="request.status_value === 'assign-signatories' ? 'text-emerald-700 hover:bg-emerald-50' : 'text-[#07559e] hover:bg-sky-50'">
+                                            <i :class="request.status_value === 'assign-signatories' ? 'fa-solid fa-arrow-right' : 'fa-solid fa-file-signature'" aria-hidden="true"></i>{{ request.status_value === 'assign-signatories' ? 'Proceed' : 'More Info' }}
+                                        </Link>
+                                        <Link v-if="request.status_value === 'awaiting-feedback' && request.service_value === 'plant-tour-services'" :href="'/admin/requests/' + request.id + '/tour-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-violet-700 hover:bg-violet-50">
+                                            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>Review Feedback
+                                        </Link>
+                                        <Link v-if="request.status_value === 'completed' && request.service_value === 'plant-tour-services'" :href="'/admin/requests/' + request.id + '/tour-request/feedback?tab=feedback'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100">
+                                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>More Info
+                                        </Link>
                                         <Link v-if="request.status_value === 'for-payment' && request.service_value === 'rnd-services'" :href="'/admin/requests/' + request.id + '/rdd-request/payment?tab=payment-verification'" class="inline-flex items-center whitespace-nowrap gap-2 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
                                             <i class="fa-solid fa-money-check-dollar" aria-hidden="true"></i>Verify Payment
                                         </Link>

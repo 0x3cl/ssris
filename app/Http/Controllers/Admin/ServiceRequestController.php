@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\ClientService;
 use App\Enums\FormTemplateKey;
+use App\Enums\OtherTourFacility;
+use App\Enums\PilotPlantFacility;
 use App\Enums\ServiceRequestLogAction;
 use App\Enums\ServiceRequestStatus;
+use App\Enums\TestingLabFacility;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceRequest;
 use App\Models\ServiceRequestLog;
+use App\Models\TourRequest;
 use App\Services\FormTemplateMailer;
 use App\Services\ServiceRequestLogger;
 use Illuminate\Http\JsonResponse;
@@ -48,7 +52,7 @@ class ServiceRequestController extends Controller
 
         $requests = ServiceRequest::query()
             ->whereIn('service', $assignedServices)
-            ->with(['client:id,firstname,middlename,lastname,fullname,email,mobile_no,type_client'])
+            ->with(['client:id,firstname,middlename,lastname,fullname,email,mobile_no,type_client', 'tourRequest.items'])
             ->when($type === 'walk-in', fn ($query) => $query->where('is_appointment', false))
             ->when($type === 'appointment', fn ($query) => $query->where('is_appointment', true))
             ->when($status !== '', fn ($query) => $query->where('status', $status))
@@ -80,6 +84,7 @@ class ServiceRequestController extends Controller
                 'description' => $serviceRequest->description,
                 'created_at' => $serviceRequest->created_at->format('F, d Y H:i:s'),
                 'client' => $serviceRequest->client,
+                'tour_request' => $serviceRequest->tourRequest ? $this->tourRequestPayload($serviceRequest->tourRequest) : null,
             ]);
 
         return Inertia::render('admin/requests', [
@@ -113,6 +118,10 @@ class ServiceRequestController extends Controller
     {
         abort_unless($serviceRequest->status === ServiceRequestStatus::Pending, 422, 'Only pending requests can proceed.');
         abort_if($serviceRequest->is_appointment && ! $serviceRequest->is_appointment_approved, 422, 'Confirm the appointment before proceeding.');
+
+        if ($serviceRequest->service === ClientService::PlantTourServices) {
+            return to_route('admin.requests.tour.create', $serviceRequest);
+        }
 
         $serviceRequest->update(['status' => ServiceRequestStatus::ForPayment]);
 
@@ -224,6 +233,35 @@ class ServiceRequestController extends Controller
         ]);
 
         return back()->with('success', $this->withEmailStatus('The appointment request has been cancelled', $emailQueued));
+    }
+
+    /** @return array<string, mixed> */
+    private function tourRequestPayload(TourRequest $tourRequest): array
+    {
+        $item = $tourRequest->items->first();
+
+        return [
+            'visit_date' => $tourRequest->visit_date?->format('F j, Y'),
+            'visit_time' => $this->formatTime($tourRequest->visit_time),
+            'message' => $tourRequest->message,
+            'no_persons' => $tourRequest->no_persons,
+            'no_groups' => $tourRequest->no_groups,
+            'technology_assistance' => $tourRequest->technology_assistance,
+            'visit_objectives' => $tourRequest->visit_objectives,
+            'testing_lab' => $this->facilityLabels(TestingLabFacility::class, $item?->testing_lab ?? []),
+            'pilot_plant' => $this->facilityLabels(PilotPlantFacility::class, $item?->pilot_plant ?? []),
+            'others' => $this->facilityLabels(OtherTourFacility::class, $item?->others ?? []),
+        ];
+    }
+
+    /**
+     * @param  class-string<TestingLabFacility|PilotPlantFacility|OtherTourFacility>  $enum
+     * @param  array<int, string>  $values
+     * @return array<int, string>
+     */
+    private function facilityLabels(string $enum, array $values): array
+    {
+        return array_map(fn (string $value): string => $enum::from($value)->label(), $values);
     }
 
     /** @param  array<string, string|int|float|null>  $values */

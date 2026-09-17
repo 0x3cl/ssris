@@ -3,6 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Enums\ClientService;
+use App\Enums\OtherTourFacility;
+use App\Enums\PilotPlantFacility;
+use App\Enums\TestingLabFacility;
 use App\Models\Client;
 use App\Models\ServiceRequest;
 use Illuminate\Console\Attributes\Description;
@@ -45,14 +48,36 @@ class CreateRequest extends Command
                 $client->restore();
             }
 
-            return collect(range(1, $amount))->map(fn (): ServiceRequest => ServiceRequest::factory()
-                ->for($client)
-                ->create([
-                    'service' => $service,
-                    'is_appointment' => $isAppointment,
-                    'appointment_date' => $isAppointment ? today()->addWeek()->toDateString() : null,
-                    'appointment_time' => $isAppointment ? '09:00:00' : null,
-                ]));
+            return collect(range(1, $amount))->map(function () use ($client, $service, $isAppointment): ServiceRequest {
+                $serviceRequest = ServiceRequest::factory()
+                    ->for($client)
+                    ->create([
+                        'service' => $service,
+                        'is_appointment' => $isAppointment,
+                        'appointment_date' => $isAppointment ? today()->addWeek()->toDateString() : null,
+                        'appointment_time' => $isAppointment ? '09:00:00' : null,
+                        ...($service === ClientService::PlantTourServices ? ['description' => null] : []),
+                    ]);
+
+                if ($service === ClientService::PlantTourServices) {
+                    $tourRequest = $serviceRequest->tourRequest()->create([
+                        'visit_date' => today()->addWeek()->toDateString(),
+                        'visit_time' => '09:00:00',
+                        'message' => 'We would like to arrange an educational tour of the textile facilities.',
+                        'no_persons' => 20,
+                        'no_groups' => 2,
+                        'technology_assistance' => 'Introduction to textile testing and fabric production.',
+                        'visit_objectives' => 'Learn about textile research, testing, and pilot plant operations.',
+                    ]);
+                    $tourRequest->items()->create([
+                        'testing_lab' => [TestingLabFacility::Physical->value, TestingLabFacility::Chemical->value],
+                        'pilot_plant' => [PilotPlantFacility::Spinning->value, PilotPlantFacility::Weaving->value],
+                        'others' => [OtherTourFacility::TelaGallery->value],
+                    ]);
+                }
+
+                return $serviceRequest;
+            });
         });
         $serviceRequests->each->load('client');
 

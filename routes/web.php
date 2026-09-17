@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\RddRequestController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ServiceRequestController;
 use App\Http\Controllers\Admin\SiteVisitorController;
+use App\Http\Controllers\Admin\TourRequestController;
 use App\Http\Controllers\Admin\TrainingRequestController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\FeedbackController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WalkInController;
 use App\Http\Middleware\CaptureVisitorsMiddleware;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 
 Route::get('/', [HomeController::class, 'index'])
     ->middleware(CaptureVisitorsMiddleware::class)
@@ -70,6 +72,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('requests/{serviceRequest}/proceed', [ServiceRequestController::class, 'proceed'])->name('requests.proceed');
         Route::patch('requests/{serviceRequest}/approve-appointment', [ServiceRequestController::class, 'approveAppointment'])->name('requests.approve-appointment');
         Route::patch('requests/{serviceRequest}/cancel-appointment', [ServiceRequestController::class, 'cancelAppointment'])->name('requests.cancel-appointment');
+        Route::get('requests/{serviceRequest}/tour-request', [TourRequestController::class, 'create'])->name('requests.tour.create');
+        Route::post('requests/{serviceRequest}/tour-request/accept', [TourRequestController::class, 'accept'])->middleware(PermissionMiddleware::class.':requests.write')->name('requests.tour.accept');
+        Route::post('requests/{serviceRequest}/tour-request/cancel', [TourRequestController::class, 'cancel'])->middleware(PermissionMiddleware::class.':requests.write')->name('requests.tour.cancel');
+        Route::post('requests/{serviceRequest}/tour-request/reschedule', [TourRequestController::class, 'reschedule'])->middleware(PermissionMiddleware::class.':requests.write')->name('requests.tour.reschedule');
+        Route::post('requests/{serviceRequest}/tour-request/signatories', [TourRequestController::class, 'storeSignatories'])->middleware(PermissionMiddleware::class.':requests.write')->name('requests.tour.signatories');
+        Route::get('requests/{serviceRequest}/tour-request/pdf', [TourRequestController::class, 'downloadRequestPdf'])->name('requests.tour.request.pdf');
+        Route::get('requests/{serviceRequest}/tour-request/confirmation/pdf', [TourRequestController::class, 'downloadConfirmationPdf'])->name('requests.tour.confirmation.pdf');
+        Route::post('requests/{serviceRequest}/tour-request/mark-done', [TourRequestController::class, 'markDone'])->middleware(PermissionMiddleware::class.':requests.write')->name('requests.tour.mark-done');
+        Route::get('requests/{serviceRequest}/tour-request/feedback', [TourRequestController::class, 'editFeedback'])->name('requests.tour.feedback.edit');
+        Route::post('requests/{serviceRequest}/tour-request/feedback/remind', [TourRequestController::class, 'sendFeedbackReminder'])->name('requests.tour.feedback.remind');
+        Route::post('requests/{serviceRequest}/tour-request/feedback/generate-link', [TourRequestController::class, 'generateFeedbackLink'])->name('requests.tour.feedback.generate-link');
+        Route::get('requests/{serviceRequest}/tour-request/feedback/responses/{feedbackLink}', [TourRequestController::class, 'viewFeedbackResponse'])->name('requests.tour.feedback.response');
+        Route::get('requests/{serviceRequest}/tour-request/feedback/responses/{feedbackLink}/pdf', [TourRequestController::class, 'downloadFeedbackResponsePdf'])->name('requests.tour.feedback.response.pdf');
         Route::get('requests/{serviceRequest}/rdd-request', [RddRequestController::class, 'create'])->name('requests.rdd.create');
         Route::post('requests/{serviceRequest}/rdd-request', [RddRequestController::class, 'store'])->name('requests.rdd.store');
         Route::get('requests/{serviceRequest}/rdd-request/attachments/{type}', [RddRequestController::class, 'downloadPaymentAttachment'])->name('requests.rdd.attachment');

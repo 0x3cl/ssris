@@ -64,6 +64,11 @@ class ServiceRequest extends Model implements Auditable
         return $this->hasOne(TrainingRequest::class);
     }
 
+    public function tourRequest(): HasOne
+    {
+        return $this->hasOne(TourRequest::class);
+    }
+
     public function logs(): HasMany
     {
         // Tiebreak on id, since several actions log more than one entry within the same second.

@@ -9,10 +9,15 @@ use App\Enums\ClientService;
 use App\Enums\ClientSource;
 use App\Enums\ClientType;
 use App\Enums\FormTemplateKey;
+use App\Enums\OtherTourFacility;
+use App\Enums\PilotPlantFacility;
 use App\Enums\ServiceRequestLogAction;
+use App\Enums\TestingLabFacility;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Client;
 use App\Models\ServiceRequest;
+use App\Models\TourRequest;
+use App\Models\TourRequestItem;
 use App\Services\ClientService as ClientServiceManager;
 use App\Services\FormTemplateMailer;
 use App\Services\ServiceRequestLogger;
@@ -39,6 +44,9 @@ class AppointmentController extends Controller
             'enterpriseSizes' => $this->options(ClientEnterpriseSize::cases()),
             'markets' => $this->options(ClientMarket::cases()),
             'sources' => $this->options(ClientSource::cases()),
+            'testingLabFacilities' => $this->options(TestingLabFacility::cases()),
+            'pilotPlantFacilities' => $this->options(PilotPlantFacility::cases()),
+            'otherTourFacilities' => $this->options(OtherTourFacility::cases()),
         ]);
     }
 
@@ -82,7 +90,7 @@ class AppointmentController extends Controller
                 ? $clientService->updateReturningClient($existingClient, $data)
                 : $clientService->create($data);
 
-            return ServiceRequest::create([
+            $serviceRequest = ServiceRequest::create([
                 'service' => $data['service'],
                 'is_appointment' => true,
                 'client_id' => $client->id,
@@ -90,6 +98,28 @@ class AppointmentController extends Controller
                 'appointment_time' => $data['appointment_time'],
                 'description' => $data['description'],
             ]);
+
+            if ($data['service'] === ClientService::PlantTourServices->value) {
+                $tourRequest = TourRequest::create([
+                    'service_request_id' => $serviceRequest->id,
+                    'visit_date' => $data['appointment_date'],
+                    'visit_time' => $data['appointment_time'],
+                    'message' => $data['message'] ?? null,
+                    'no_persons' => $data['no_persons'] ?? null,
+                    'no_groups' => $data['no_groups'] ?? null,
+                    'technology_assistance' => $data['technology_assistance'] ?? null,
+                    'visit_objectives' => $data['visit_objectives'] ?? null,
+                ]);
+
+                TourRequestItem::create([
+                    'tour_request_id' => $tourRequest->id,
+                    'testing_lab' => $data['testing_lab'] ?? null,
+                    'pilot_plant' => $data['pilot_plant'] ?? null,
+                    'others' => $data['others'] ?? null,
+                ]);
+            }
+
+            return $serviceRequest;
         });
 
         $emailQueued = $this->sendAcknowledgementEmail($serviceRequest, $data);

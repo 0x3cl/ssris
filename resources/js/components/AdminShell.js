@@ -1,13 +1,24 @@
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { defineComponent, ref, watch } from 'vue';
+import ConfirmActionModal from './ConfirmActionModal';
 import FeedbackModal from './FeedbackModal';
 
 export default defineComponent({
     name: 'AdminShell',
     props: { active: { type: String, required: true }, title: { type: String, required: true } },
-    components: { FeedbackModal, Link },
+    components: { ConfirmActionModal, FeedbackModal, Link },
     setup() {
-        const logout = () => router.post('/admin/logout');
+        const confirmingLogout = ref(false);
+        const loggingOut = ref(false);
+        const logout = () => {
+            loggingOut.value = true;
+            router.post('/admin/logout', {}, {
+                onFinish: () => {
+                    loggingOut.value = false;
+                    confirmingLogout.value = false;
+                },
+            });
+        };
         const page = usePage();
         const sidebarOpen = ref(false);
         const feedback = ref({ message: '', open: false, title: '', tone: 'success' });
@@ -37,7 +48,7 @@ export default defineComponent({
             { key: 'my-account', label: 'My account', href: '/admin/my-account', icon: 'fa-solid fa-circle-user' },
         ];
 
-        return { feedback, logout, modules, sidebarOpen };
+        return { confirmingLogout, feedback, loggingOut, logout, modules, sidebarOpen };
     },
     template: `
         <main class="bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
@@ -49,7 +60,7 @@ export default defineComponent({
                         </button>
                         <div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-[#07559e]">Administration</p><h1 class="mt-1 text-2xl font-semibold text-slate-900">{{ title }}</h1></div>
                     </div>
-                    <div class="flex items-center gap-4"><Link href="/" class="text-sm font-semibold text-[#07559e] transition hover:text-[#043d78]"><i class="fa-solid fa-house mr-2" aria-hidden="true"></i>Public site</Link><button type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#07559e] hover:text-[#07559e]" @click="logout"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>Sign out</button></div>
+                    <div class="flex items-center gap-4"><Link href="/" class="text-sm font-semibold text-[#07559e] transition hover:text-[#043d78]"><i class="fa-solid fa-house mr-2" aria-hidden="true"></i>Public site</Link><button type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#07559e] hover:text-[#07559e]" @click="confirmingLogout = true"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>Sign out</button></div>
                 </header>
                 <div class="mt-8 grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" @click="sidebarOpen = false"></div>
@@ -68,6 +79,17 @@ export default defineComponent({
                 </div>
             </section>
             <FeedbackModal :open="feedback.open" :title="feedback.title" :message="feedback.message" :tone="feedback.tone" :icon="feedback.tone === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check'" @close="feedback.open = false" />
+            <ConfirmActionModal
+                :open="confirmingLogout"
+                :processing="loggingOut"
+                title="Sign out?"
+                message="Are you sure you want to log out of your admin session?"
+                confirm-label="Sign out"
+                tone="danger"
+                icon="fa-solid fa-arrow-right-from-bracket"
+                @close="confirmingLogout = false"
+                @confirm="logout"
+            />
         </main>
     `,
 });
