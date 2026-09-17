@@ -33,11 +33,18 @@ class ServiceRequestController extends Controller
         $entries = in_array($entries, [10, 25, 50], true) ? $entries : 10;
         $type = $request->string('type')->value();
         $status = $request->string('status')->value();
-        $service = $request->string('service')->value();
         $date = $request->string('date')->value();
         $search = trim($request->string('search')->value());
 
         $assignedServices = (Auth::user()?->services ?? collect())->pluck('service')->map(fn (ClientService $service): string => $service->value)->all();
+
+        // When an admin is scoped to exactly one service, filter to it by default
+        // instead of showing an "All services" state they have no other option under.
+        $service = $request->string('service')->value();
+
+        if ($service === '' && ! $request->has('service') && count($assignedServices) === 1) {
+            $service = $assignedServices[0];
+        }
 
         $requests = ServiceRequest::query()
             ->whereIn('service', $assignedServices)
@@ -83,8 +90,8 @@ class ServiceRequestController extends Controller
                 ServiceRequestStatus::cases(),
             ),
             'services' => array_map(
-                fn (ClientService $service): array => ['value' => $service->value, 'label' => $service->label()],
-                ClientService::cases(),
+                fn (string $value): array => ['value' => $value, 'label' => ClientService::from($value)->label()],
+                $assignedServices,
             ),
         ]);
     }

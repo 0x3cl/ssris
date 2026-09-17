@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\FeedbackDisplaySetting;
 use App\Models\FeedbackRating;
 use App\Services\FeedbackRatingService;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,20 @@ class FeedbackRatingController extends Controller
         return Inertia::render('admin/feedback-ratings', [
             'filters' => compact('entries'),
             'ratings' => $this->ratings->paginate($entries)->withQueryString(),
+            'showEmoji' => FeedbackDisplaySetting::showEmoji(),
         ]);
+    }
+
+    public function updateDisplayMode(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['show_emoji' => ['required', 'boolean']]);
+
+        $setting = FeedbackDisplaySetting::query()->first() ?? new FeedbackDisplaySetting;
+        $setting->fill($data)->save();
+
+        return back()->with('success', $data['show_emoji']
+            ? 'The rating scale will now show emoji to clients.'
+            : 'The rating scale will now show numbers to clients.');
     }
 
     public function create(): Response
@@ -34,7 +48,7 @@ class FeedbackRatingController extends Controller
     public function edit(FeedbackRating $feedbackRating): Response
     {
         return Inertia::render('admin/feedback-rating-form', [
-            'rating' => ['id' => $feedbackRating->id, 'name' => $feedbackRating->name, 'value' => $feedbackRating->value, 'weight' => $feedbackRating->weight],
+            'rating' => ['id' => $feedbackRating->id, 'name' => $feedbackRating->name, 'value' => $feedbackRating->value, 'weight' => $feedbackRating->weight, 'emoji' => $feedbackRating->emoji],
         ]);
     }
 

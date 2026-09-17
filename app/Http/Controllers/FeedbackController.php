@@ -6,6 +6,7 @@ use App\Enums\ServiceRequestLogAction;
 use App\Enums\ServiceRequestStatus;
 use App\Models\Client;
 use App\Models\FeedbackDimension;
+use App\Models\FeedbackDisplaySetting;
 use App\Models\FeedbackItem;
 use App\Models\FeedbackLink;
 use App\Models\FeedbackQuestion;
@@ -58,6 +59,7 @@ class FeedbackController extends Controller
             'dimensions' => $snapshot['dimensions'],
             'ratings' => $snapshot['ratings'],
             'questions' => $snapshot['questions'],
+            'showEmoji' => FeedbackDisplaySetting::showEmoji(),
         ]);
     }
 
@@ -134,7 +136,7 @@ class FeedbackController extends Controller
                     'description' => $item->description,
                 ])->all(),
             ])->all(),
-            'ratings' => FeedbackRating::query()->orderBy('id')->get(['id', 'name', 'value', 'weight'])->toArray(),
+            'ratings' => FeedbackRating::query()->orderBy('id')->get(['id', 'name', 'value', 'weight', 'emoji'])->toArray(),
             'questions' => FeedbackQuestion::query()->orderBy('id')->get(['id', 'name'])->toArray(),
         ];
     }
@@ -146,12 +148,16 @@ class FeedbackController extends Controller
 
     private function unavailable(?FeedbackLink $link): Response
     {
+        $serviceRequest = $link?->serviceRequest;
+
         return Inertia::render('feedback-unavailable', [
             'reason' => match (true) {
                 $link === null => 'not-found',
                 $link->isSubmitted() => 'submitted',
                 default => 'expired',
             },
+            'serviceRequestId' => $serviceRequest?->id,
+            'feedbackResponseId' => $link?->response?->id,
         ]);
     }
 }

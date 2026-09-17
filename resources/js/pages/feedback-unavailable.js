@@ -24,7 +24,11 @@ const copy = {
 
 export default defineComponent({
     name: 'PublicFeedbackUnavailable',
-    props: { reason: { type: String, required: true } },
+    props: {
+        reason: { type: String, required: true },
+        serviceRequestId: { type: Number, default: null },
+        feedbackResponseId: { type: Number, default: null },
+    },
     setup(props) {
         const details = computed(() => copy[props.reason] ?? copy['not-found']);
 
@@ -39,6 +43,8 @@ export default defineComponent({
                 </div>
                 <h1 class="mt-6 text-2xl font-bold text-slate-900 sm:text-3xl">{{ details.title }}</h1>
                 <p class="mt-3 leading-7 text-slate-600">{{ details.message }}</p>
+                <p v-if="serviceRequestId" class="mt-4 inline-block rounded-full bg-slate-100 px-4 py-1.5 text-sm font-semibold text-slate-700">Service Request: #0000{{ serviceRequestId }}</p>
+                <p v-if="feedbackResponseId" class="mt-2 text-sm font-semibold text-slate-700">Feedback ID: #0000{{ feedbackResponseId }}</p>
             </section>
         </div>
     `,

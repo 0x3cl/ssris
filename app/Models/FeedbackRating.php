@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
-#[Fillable(['name', 'value', 'weight'])]
+#[Fillable(['name', 'value', 'weight', 'emoji'])]
 class FeedbackRating extends Model implements Auditable
 {
     /** @use HasFactory<FeedbackRatingFactory> */

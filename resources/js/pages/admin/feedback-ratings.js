@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/vue3';
-import { defineComponent, reactive } from 'vue';
+import { defineComponent, reactive, ref } from 'vue';
 import AdminPagination from '../../components/AdminPagination';
 import AdminShell from '../../components/AdminShell';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
@@ -7,10 +7,15 @@ import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 export default defineComponent({
     name: 'AdminFeedbackRatings',
     components: { AdminPagination, AdminShell, DeleteConfirmationModal, Head, Link },
-    props: { filters: { type: Object, required: true }, ratings: { type: Object, required: true } },
+    props: {
+        filters: { type: Object, required: true },
+        ratings: { type: Object, required: true },
+        showEmoji: { type: Boolean, required: true },
+    },
     setup(props) {
         const filters = reactive({ ...props.filters });
         const deleting = reactive({ processing: false, rating: null });
+        const togglingDisplay = ref(false);
         const load = () => router.get('/admin/feedback-builder/ratings', filters, { preserveScroll: true, preserveState: true, replace: true });
         const page = (url) => { if (url) router.get(url, {}, { preserveScroll: true }); };
         const remove = (rating) => { deleting.rating = rating; };
@@ -23,8 +28,17 @@ export default defineComponent({
                 onFinish: () => { deleting.processing = false; },
             });
         };
+        const toggleDisplayMode = () => {
+            if (togglingDisplay.value) return;
+            togglingDisplay.value = true;
+            router.put('/admin/feedback-builder/ratings/display-mode', { show_emoji: !props.showEmoji }, {
+                preserveScroll: true,
+                preserveState: true,
+                onFinish: () => { togglingDisplay.value = false; },
+            });
+        };
 
-        return { confirmDelete, deleting, filters, load, page, remove };
+        return { confirmDelete, deleting, filters, load, page, remove, toggleDisplayMode, togglingDisplay };
     },
     template: `
         <Head title="Rating scale" />
@@ -40,7 +54,16 @@ export default defineComponent({
                         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Back to dimensions
                     </Link>
                 </div>
-                <div class="mt-7 flex flex-wrap items-end justify-between gap-4">
+                <div class="mt-7 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900">Show clients: {{ showEmoji ? 'Emoji' : 'Numbers' }}</p>
+                        <p class="text-sm text-slate-600">Controls whether the rating scale header on the feedback form shows emoji (e.g. 😄) or the numeric value (e.g. 5).</p>
+                    </div>
+                    <button type="button" role="switch" :aria-checked="showEmoji" :disabled="togglingDisplay" aria-label="Toggle between emoji and numeric rating display" class="relative h-7 w-12 shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60" :class="showEmoji ? 'bg-[#00aeef]' : 'bg-slate-300'" @click="toggleDisplayMode">
+                        <span class="absolute top-0.5 left-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs leading-normal shadow transition" :class="{ 'translate-x-5': showEmoji }">{{ showEmoji ? '😄' : '#' }}</span>
+                    </button>
+                </div>
+                <div class="mt-5 flex flex-wrap items-end justify-between gap-4">
                     <label class="text-sm font-semibold text-slate-700">
                         Entries
                         <select v-model="filters.entries" class="ml-2 rounded-lg border border-slate-300 px-3 py-2" @change="load">
@@ -58,6 +81,7 @@ export default defineComponent({
                         <thead class="border-y border-slate-200 text-xs uppercase tracking-wide text-slate-500">
                             <tr>
                                 <th class="px-4 py-4">Value</th>
+                                <th class="px-4 py-4">Emoji</th>
                                 <th class="px-4 py-4">Name</th>
                                 <th class="px-4 py-4">Weight</th>
                                 <th class="px-4 py-4 text-right">Actions</th>
@@ -66,6 +90,7 @@ export default defineComponent({
                         <tbody>
                             <tr v-for="rating in ratings.data" :key="rating.id" class="border-b border-slate-100 hover:bg-sky-50/50">
                                 <td class="px-4 py-4 font-mono text-sm font-bold text-slate-900">{{ rating.value }}</td>
+                                <td class="px-4 py-4 text-2xl leading-normal">{{ rating.emoji || '—' }}</td>
                                 <td class="px-4 py-4 text-sm text-slate-700">{{ rating.name }}</td>
                                 <td class="px-4 py-4 text-sm text-slate-700">{{ rating.weight ?? '—' }}</td>
                                 <td class="px-4 py-4 text-right">
@@ -74,7 +99,7 @@ export default defineComponent({
                                 </td>
                             </tr>
                             <tr v-if="ratings.data.length === 0">
-                                <td colspan="4" class="px-4 py-12 text-center text-slate-500">No rating options yet.</td>
+                                <td colspan="5" class="px-4 py-12 text-center text-slate-500">No rating options yet.</td>
                             </tr>
                         </tbody>
                     </table>

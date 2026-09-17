@@ -14,7 +14,7 @@ class FeedbackFormSeeder extends Seeder
         foreach ($this->ratings() as $rating) {
             FeedbackRating::query()->updateOrCreate(
                 ['value' => $rating['value']],
-                ['name' => $rating['name'], 'weight' => $rating['weight']],
+                ['name' => $rating['name'], 'weight' => $rating['weight'], 'emoji' => $rating['emoji']],
             );
         }
 
@@ -31,16 +31,16 @@ class FeedbackFormSeeder extends Seeder
         }
     }
 
-    /** @return array<int, array{value: string, name: string, weight: ?float}> */
+    /** @return array<int, array{value: string, name: string, weight: ?float, emoji: ?string}> */
     private function ratings(): array
     {
         return [
-            ['value' => '5', 'name' => 'Excellent', 'weight' => 5],
-            ['value' => '4', 'name' => 'Very Satisfactory', 'weight' => 4],
-            ['value' => '3', 'name' => 'Satisfactory', 'weight' => 3],
-            ['value' => '2', 'name' => 'Fair', 'weight' => 2],
-            ['value' => '1', 'name' => 'Poor', 'weight' => 1],
-            ['value' => 'N/A', 'name' => 'Not Applicable', 'weight' => null],
+            ['value' => '5', 'name' => 'Excellent', 'weight' => 5, 'emoji' => '😄'],
+            ['value' => '4', 'name' => 'Very Satisfactory', 'weight' => 4, 'emoji' => '🙂'],
+            ['value' => '3', 'name' => 'Satisfactory', 'weight' => 3, 'emoji' => '😐'],
+            ['value' => '2', 'name' => 'Fair', 'weight' => 2, 'emoji' => '🙁'],
+            ['value' => '1', 'name' => 'Poor', 'weight' => 1, 'emoji' => '😞'],
+            ['value' => 'N/A', 'name' => 'Not Applicable', 'weight' => null, 'emoji' => '🚫'],
         ];
     }
 

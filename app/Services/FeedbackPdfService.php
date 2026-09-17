@@ -9,7 +9,7 @@ class FeedbackPdfService
     /**
      * @param  array<int, array{id: int, name: string, items: array<int, array{id: int, description: string}>}>  $dimensions
      * @param  array<int, array{id: int, name: string}>  $questions
-     * @param  array<int, array{id: int, name: string, value: string|int}>  $ratings
+     * @param  array<int, array{id: int, name: string, value: string|int, emoji?: ?string}>  $ratings
      * @param  array<string, mixed>|null  $client
      * @param  array<int|string, mixed>|null  $responseRatings
      * @param  array<int|string, string>|null  $responseAnswers
@@ -21,6 +21,7 @@ class FeedbackPdfService
         ?array $client = null,
         ?array $responseRatings = null,
         ?array $responseAnswers = null,
+        bool $showEmoji = false,
     ): string {
         $pdf = new NumberedPdf('P', 'pt', 'A4', true, 'UTF-8', false);
         $pdf->SetCreator((string) config('app.name'));
@@ -28,6 +29,10 @@ class FeedbackPdfService
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(true);
         $pdf->SetMargins(24, 24, 24);
+        // This service positions and sizes every cell manually, so TCPDF's own
+        // default cell padding is turned off to stop it silently narrowing the
+        // text area on top of that (it was forcing extra word-wraps).
+        $pdf->setCellPaddings(0, 0, 0, 0);
         $pdf->SetAutoPageBreak(false);
         $pdf->AddPage();
 
@@ -45,7 +50,7 @@ class FeedbackPdfService
         $y += 20;
 
         $columnWidths = $this->columnWidths($width, count($ratings));
-        $y = $this->drawRatingsHeader($pdf, $margin, $y, $columnWidths, $ratings);
+        $y = $this->drawRatingsHeader($pdf, $margin, $y, $columnWidths, $ratings, $showEmoji);
 
         foreach ($dimensions as $dimension) {
             $rowHeights = array_map(
@@ -56,7 +61,7 @@ class FeedbackPdfService
 
             if ($y + $dimensionHeight > $bottom && $y > 100) {
                 $pdf->AddPage();
-                $y = $this->drawRatingsHeader($pdf, $margin, 24, $columnWidths, $ratings);
+                $y = $this->drawRatingsHeader($pdf, $margin, 24, $columnWidths, $ratings, $showEmoji);
             }
 
             $this->drawDimension($pdf, $margin, $y, $dimension, $rowHeights, $columnWidths, $ratings, $responseRatings);
@@ -215,11 +220,18 @@ class FeedbackPdfService
         return $x + 12 + $pdf->GetStringWidth($label);
     }
 
-    /** @return array{dimension: float, description: float, rating: float} */
+    /**
+     * The dimension column is sized to fit the longest dimension name ("RESPONSIVENESS")
+     * on one line, and the rating columns to fit the widest single word in any seeded
+     * rating name ("Satisfactory", "Applicable") at the header font size, so both wrap
+     * cleanly at word boundaries instead of breaking mid-word.
+     *
+     * @return array{dimension: float, description: float, rating: float}
+     */
     private function columnWidths(float $width, int $ratingCount): array
     {
-        $dimension = $width * 0.15;
-        $description = $width * 0.28;
+        $dimension = $width * 0.14;
+        $description = $width * 0.24;
 
         return [
             'dimension' => $dimension,
@@ -228,10 +240,25 @@ class FeedbackPdfService
         ];
     }
 
-    /** @param array<int, array{id: int, name: string, value: string|int}> $ratings */
-    private function drawRatingsHeader(TCPDF $pdf, float $x, float $y, array $widths, array $ratings): float
+    private const EMOJI_ICON_SIZE = 16.0;
+
+    private const EMOJI_ICON_TOP_GAP = 4.0;
+
+    private const EMOJI_ICON_BOTTOM_GAP = 3.0;
+
+    /**
+     * Draws the pre-rendered emoji PNG (see emojiImagePath()) above the rating name
+     * when the display setting is on and a matching image exists, instead of the
+     * numeric value — TCPDF can only embed vector outline fonts, and no color emoji
+     * font has usable outline data, so real emoji can only appear here as images,
+     * never as text. Falls back to the numeric value for any emoji without a
+     * pre-rendered image (e.g. one pasted in that isn't in the curated picker set).
+     *
+     * @param  array<int, array{id: int, name: string, value: string|int, emoji?: ?string}>  $ratings
+     */
+    private function drawRatingsHeader(TCPDF $pdf, float $x, float $y, array $widths, array $ratings, bool $showEmoji = false): float
     {
-        $headerHeight = 34.0;
+        $headerHeight = $this->ratingsHeaderHeight($pdf, $ratings, $widths['rating'], $showEmoji);
         $pdf->SetFillColor(255, 255, 255);
         $pdf->SetTextColor(15, 23, 42);
         $pdf->SetFont('helvetica', 'B', 8);
@@ -241,15 +268,50 @@ class FeedbackPdfService
         $cursor += $widths['description'];
 
         foreach ($ratings as $rating) {
-            $this->tableCell($pdf, $cursor, $y, $widths['rating'], $headerHeight, "{$rating['value']}\n{$rating['name']}", true, 'C', 'T');
+            $emojiPath = $showEmoji ? $this->emojiImagePath((string) ($rating['emoji'] ?? '')) : null;
+            $this->drawRatingHeaderCell($pdf, $cursor, $y, $widths['rating'], $headerHeight, $rating, $emojiPath);
             $cursor += $widths['rating'];
         }
 
         if ($ratings === []) {
+            $pdf->SetFont('helvetica', 'B', 8);
             $this->tableCell($pdf, $cursor, $y, $widths['rating'], $headerHeight, 'Rating', true, 'C', 'T');
         }
 
         return $y + $headerHeight;
+    }
+
+    /** @param  array{id: int, name: string, value: string|int, emoji?: ?string}  $rating */
+    private function drawRatingHeaderCell(TCPDF $pdf, float $x, float $y, float $width, float $height, array $rating, ?string $emojiPath): void
+    {
+        $pdf->SetDrawColor(15, 23, 42);
+        $pdf->Rect($x, $y, $width, $height, 'DF');
+
+        if ($emojiPath !== null) {
+            $pdf->Image($emojiPath, $x + (($width - self::EMOJI_ICON_SIZE) / 2), $y + self::EMOJI_ICON_TOP_GAP, self::EMOJI_ICON_SIZE, self::EMOJI_ICON_SIZE);
+            $textY = $y + self::EMOJI_ICON_TOP_GAP + self::EMOJI_ICON_SIZE + self::EMOJI_ICON_BOTTOM_GAP;
+            $pdf->SetFont('helvetica', 'B', 8);
+            $pdf->SetXY($x + 4, $textY);
+            $pdf->MultiCell($width - 8, $height - ($textY - $y), $rating['name'], 0, 'C', false, 0, '', '', true, 0, false, true, $height - ($textY - $y), 'T');
+
+            return;
+        }
+
+        $pdf->SetFont('helvetica', 'B', 8);
+        $pdf->SetXY($x + 4, $y + 3);
+        $pdf->MultiCell($width - 8, $height - 6, "{$rating['value']}\n{$rating['name']}", 0, 'C', false, 0, '', '', true, 0, false, true, $height - 6, 'T');
+    }
+
+    /** The pre-rendered PNG for this exact emoji string, if one exists, or null. */
+    private function emojiImagePath(string $emoji): ?string
+    {
+        if ($emoji === '') {
+            return null;
+        }
+
+        $path = resource_path('images/emoji/'.bin2hex($emoji).'.png');
+
+        return is_file($path) ? $path : null;
     }
 
     private function rowHeight(TCPDF $pdf, string $description, float $descriptionWidth): float
@@ -257,6 +319,40 @@ class FeedbackPdfService
         $pdf->SetFont('helvetica', '', 8);
 
         return max(22.0, ($pdf->getNumLines($description, $descriptionWidth - 10) * 9) + 8);
+    }
+
+    /**
+     * Grows the header row to fit however many lines the longest rating label wraps
+     * to at this column width, instead of clipping it at a fixed height.
+     *
+     * @param  array<int, array{id: int, name: string, value: string|int, emoji?: ?string}>  $ratings
+     */
+    private function ratingsHeaderHeight(TCPDF $pdf, array $ratings, float $ratingWidth, bool $showEmoji = false): float
+    {
+        if ($ratings === []) {
+            return 34.0;
+        }
+
+        $innerWidth = max($ratingWidth - 8, 10.0);
+        $pdf->SetFont('helvetica', 'B', 8);
+
+        $maxHeight = 0.0;
+
+        foreach ($ratings as $rating) {
+            $emojiPath = $showEmoji ? $this->emojiImagePath((string) ($rating['emoji'] ?? '')) : null;
+            $nameLines = $pdf->getNumLines($rating['name'], $innerWidth);
+
+            if ($emojiPath !== null) {
+                $height = self::EMOJI_ICON_TOP_GAP + self::EMOJI_ICON_SIZE + self::EMOJI_ICON_BOTTOM_GAP + ($nameLines * 10) + 4;
+            } else {
+                $valueLines = $pdf->getNumLines((string) $rating['value'], $innerWidth);
+                $height = (($valueLines + $nameLines) * 10) + 14;
+            }
+
+            $maxHeight = max($maxHeight, $height);
+        }
+
+        return max(34.0, $maxHeight);
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainingRequestFeeRequest;
 use App\Http\Requests\StoreTrainingRequestRequest;
 use App\Models\Client;
+use App\Models\FeedbackDisplaySetting;
 use App\Models\FeedbackLink;
 use App\Models\ServiceRequest;
 use App\Models\ServiceRequestLog;
@@ -390,6 +391,7 @@ class TrainingRequestController extends Controller
             'questions' => $snapshot['questions'],
             'responseRatings' => $response->ratings,
             'responseAnswers' => $response->answers,
+            'showEmoji' => FeedbackDisplaySetting::showEmoji(),
             'pdfUrl' => route('admin.requests.training.feedback.response.pdf', [$serviceRequest, $feedbackLink]),
         ]);
     }
@@ -432,6 +434,7 @@ class TrainingRequestController extends Controller
             ],
             $response->ratings,
             $response->answers,
+            showEmoji: FeedbackDisplaySetting::showEmoji(),
         );
 
         return response($document, 200, [

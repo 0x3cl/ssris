@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FeedbackDimension;
+use App\Models\FeedbackDisplaySetting;
 use App\Models\FeedbackItem;
 use App\Models\FeedbackQuestion;
 use App\Models\FeedbackRating;
@@ -49,7 +50,8 @@ class FeedbackDimensionController extends Controller
         return Inertia::render('admin/feedback-visualization', [
             'dimensions' => $this->dimensionPayloads(),
             'questions' => FeedbackQuestion::query()->orderBy('id')->get(['id', 'name']),
-            'ratings' => FeedbackRating::query()->orderBy('id')->get(['id', 'name', 'value']),
+            'ratings' => FeedbackRating::query()->orderBy('id')->get(['id', 'name', 'value', 'emoji']),
+            'showEmoji' => FeedbackDisplaySetting::showEmoji(),
         ]);
     }
 
@@ -61,6 +63,7 @@ class FeedbackDimensionController extends Controller
             $this->dimensionPayloads(),
             $this->questionPayloads(),
             $this->ratingPayloads(),
+            showEmoji: FeedbackDisplaySetting::showEmoji(),
         ), 200, [
             'Content-Disposition' => "inline; filename=\"{$filename}\"",
             'Content-Type' => 'application/pdf',
@@ -184,8 +187,8 @@ class FeedbackDimensionController extends Controller
     {
         return FeedbackRating::query()
             ->orderBy('id')
-            ->get(['id', 'name', 'value'])
-            ->map(fn (FeedbackRating $rating): array => ['id' => $rating->id, 'name' => $rating->name, 'value' => $rating->value])
+            ->get(['id', 'name', 'value', 'emoji'])
+            ->map(fn (FeedbackRating $rating): array => ['id' => $rating->id, 'name' => $rating->name, 'value' => $rating->value, 'emoji' => $rating->emoji])
             ->all();
     }
 }

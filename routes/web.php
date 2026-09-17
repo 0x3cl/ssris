@@ -138,6 +138,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('form-templates/{formTemplate}', [FormTemplateController::class, 'update'])->name('form-templates.update');
         Route::get('feedback-builder/ratings', [FeedbackRatingController::class, 'index'])->name('feedback-builder.ratings.index');
         Route::get('feedback-builder/ratings/create', [FeedbackRatingController::class, 'create'])->name('feedback-builder.ratings.create');
+        Route::put('feedback-builder/ratings/display-mode', [FeedbackRatingController::class, 'updateDisplayMode'])->name('feedback-builder.ratings.display-mode');
         Route::get('feedback-builder/ratings/{feedbackRating}/edit', [FeedbackRatingController::class, 'edit'])->name('feedback-builder.ratings.edit');
         Route::post('feedback-builder/ratings', [FeedbackRatingController::class, 'store'])->name('feedback-builder.ratings.store');
         Route::put('feedback-builder/ratings/{feedbackRating}', [FeedbackRatingController::class, 'update'])->name('feedback-builder.ratings.update');

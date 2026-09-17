@@ -9,6 +9,7 @@ use App\Enums\ServiceRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRddRequestRequest;
 use App\Models\Client;
+use App\Models\FeedbackDisplaySetting;
 use App\Models\FeedbackLink;
 use App\Models\RddRequest;
 use App\Models\RddRequestItem;
@@ -331,6 +332,7 @@ class RddRequestController extends Controller
             'questions' => $snapshot['questions'],
             'responseRatings' => $response->ratings,
             'responseAnswers' => $response->answers,
+            'showEmoji' => FeedbackDisplaySetting::showEmoji(),
             'pdfUrl' => route('admin.requests.rdd.feedback.response.pdf', [$serviceRequest, $feedbackLink]),
         ]);
     }
@@ -373,6 +375,7 @@ class RddRequestController extends Controller
             ],
             $response->ratings,
             $response->answers,
+            showEmoji: FeedbackDisplaySetting::showEmoji(),
         );
 
         return response($document, 200, [

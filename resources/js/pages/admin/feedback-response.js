@@ -34,6 +34,7 @@ export default defineComponent({
         questions: { type: Array, required: true },
         responseRatings: { type: Object, required: true },
         responseAnswers: { type: Object, required: true },
+        showEmoji: { type: Boolean, default: false },
         pdfUrl: { type: String, required: true },
     },
     setup(props) {
@@ -106,7 +107,7 @@ export default defineComponent({
                             <tr class="bg-white text-slate-900">
                                 <th class="border border-slate-900 px-3 py-3 text-sm font-bold align-top">Dimension</th>
                                 <th class="border border-slate-900 px-3 py-3 text-sm font-bold align-top">Description</th>
-                                <th v-for="rating in ratings" :key="rating.id" class="border border-slate-900 px-2 py-3 text-center align-top text-xs leading-tight font-bold"><span class="font-bold">{{ rating.value }}</span><span class="block font-medium normal-case">{{ rating.name }}</span></th>
+                                <th v-for="rating in ratings" :key="rating.id" class="border border-slate-900 px-2 py-3 text-center align-top text-xs leading-tight font-bold"><span v-if="showEmoji && rating.emoji" class="block text-base leading-normal">{{ rating.emoji }}</span><span v-else class="font-bold">{{ rating.value }}</span><span class="block font-medium normal-case">{{ rating.name }}</span></th>
                             </tr>
                         </thead>
                         <tbody>

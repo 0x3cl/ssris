@@ -53,7 +53,8 @@ class FeedbackRatingService
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'value' => ['required', 'string', 'max:255'],
-            'weight' => ['nullable', 'numeric'],
+            'weight' => ['nullable', 'numeric', 'required_unless:value,N/A'],
+            'emoji' => ['required', 'string', 'max:8'],
         ])->validate();
     }
 }

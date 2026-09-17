@@ -63,7 +63,10 @@ class ReportController extends Controller
                 'enterpriseSizes' => $this->enumOptions(ClientEnterpriseSize::cases()),
                 'markets' => $this->enumOptions(ClientMarket::cases()),
                 'sources' => $this->enumOptions(ClientSource::cases()),
-                'services' => $this->enumOptions(ClientService::cases()),
+                'services' => array_map(
+                    fn (string $value): array => ['value' => $value, 'label' => ClientService::from($value)->label()],
+                    $this->assignedServices(),
+                ),
                 'statuses' => $this->enumOptions(ServiceRequestStatus::cases()),
                 'governmentCategories' => $this->enumOptions(GovernmentCategory::cases()),
             ],
@@ -79,6 +82,26 @@ class ReportController extends Controller
     private function assignedServices(): array
     {
         return (Auth::user()?->services ?? collect())->pluck('service')->map(fn (ClientService $service): string => $service->value)->all();
+    }
+
+    /**
+     * The "service" filter value to use: whatever was explicitly requested, or —
+     * when the admin is scoped to exactly one service and none was requested —
+     * that one service, so the filter isn't left on a moot "All services" state.
+     */
+    private function defaultServiceFilter(Request $request): string
+    {
+        $service = $request->string('service')->value();
+
+        if ($service === '' && ! $request->has('service')) {
+            $assignedServices = $this->assignedServices();
+
+            if (count($assignedServices) === 1) {
+                return $assignedServices[0];
+            }
+        }
+
+        return $service;
     }
 
     private function clientType(mixed $value): ClientType
@@ -196,7 +219,7 @@ class ReportController extends Controller
         $enterpriseSize = $request->string('enterprise_size')->value();
         $market = $request->string('market')->value();
         $source = $request->string('source')->value();
-        $service = $request->string('service')->value();
+        $service = $this->defaultServiceFilter($request);
         $region = $request->string('region')->value();
         $status = $request->input('status') === 'archived' ? 'archived' : 'active';
 
@@ -267,7 +290,7 @@ class ReportController extends Controller
         $entries = in_array($entries, [10, 25, 50], true) ? $entries : 10;
         $search = trim($request->string('search')->value());
         $status = $request->string('status')->value();
-        $service = $request->string('service')->value();
+        $service = $this->defaultServiceFilter($request);
         $type = $request->string('type')->value();
         $region = $request->string('region')->value();
         $governmentCategory = $request->string('government_category')->value();
@@ -338,7 +361,7 @@ class ReportController extends Controller
     {
         $entries = (int) $request->integer('entries', 10);
         $entries = in_array($entries, [10, 25, 50], true) ? $entries : 10;
-        $service = $request->string('service')->value();
+        $service = $this->defaultServiceFilter($request);
         $governmentCategory = $request->string('government_category')->value();
         $assignedServices = $this->assignedServices();
 
